@@ -18,11 +18,18 @@ build/hashmap.o: src/hashmap.c include/hashmap.h | build
 build/tests_hashmap.o: tests/tests_hashmap.c tests/tests.h include/hashmap.h | build
 	$(CC) $(CFLAGS) -c tests/tests_hashmap.c -o build/tests_hashmap.o
 
+build/binarysearchtreemap.o: src/binarysearchtreemap.c include/binarysearchtreemap.h | build
+	$(CC) $(CFLAGS) -c src/binarysearchtreemap.c -o build/binarysearchtreemap.o
+
+build/tests_binarysearchtreemap.o: tests/tests_binarysearchtreemap.c tests/tests.h include/binarysearchtreemap.h | build
+	$(CC) $(CFLAGS) -c tests/tests_binarysearchtreemap.c -o build/tests_binarysearchtreemap.o 
+
 build/binarysearchtree.o: src/binarysearchtree.c include/binarysearchtree.h | build
 	$(CC) $(CFLAGS) -c src/binarysearchtree.c -o build/binarysearchtree.o
 
 build/tests_binarysearchtree.o: tests/tests_binarysearchtree.c tests/tests.h include/binarysearchtree.h | build
 	$(CC) $(CFLAGS) -c tests/tests_binarysearchtree.c -o build/tests_binarysearchtree.o 
+
 
 build/tests_main.o: tests/tests_main.c tests/tests.h | build
 	$(CC) $(CFLAGS) -c tests/tests_main.c -o build/tests_main.o

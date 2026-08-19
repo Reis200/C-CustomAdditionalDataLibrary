@@ -1,24 +1,46 @@
 #ifndef BINARYSEARCHTREE_H
-
 #define BINARYSEARCHTREE_H
 
-typedef struct BinarySearchTree{
-    char *key;  // the key: a string
-    void *value; //the value: a generic pointer
+typedef struct BinarySearchTree {
+    void *data;
+
     struct BinarySearchTree *left;
-    struct BinarySearchTree *right; // the left and right subtrees
-} BinarySearchTree;
+    struct BinarySearchTree *right;
+}BinarySearchTree;
 
-void bst_printkv(const BinarySearchTree *root);
-
-BinarySearchTree* bst_free_value(BinarySearchTree *root, const char *key);
-
-void* bst_get(const BinarySearchTree *root, const char *key);
-
-BinarySearchTree* bst_remove(BinarySearchTree *root, const char *key);
-
-void bst_destroy(BinarySearchTree *root);
+/*
+ COMPARISON FUNCTION:
+    < 0 if a < b
+      0 if a == b
+    > 0 if a > b    
+*/
+typedef int (*BSTCompareFunc)(const void *a, const void *b);
 
 
+/*Make / insert*/
+BinarySearchTree* bst_insert(BinarySearchTree *root,void *data,BSTCompareFunc compare);
+
+/*Search*/
+void* bst_find(BinarySearchTree *root,const void *data,BSTCompareFunc compare);
+
+/*Remove*/
+void* bst_remove(BinarySearchTree *root,const void *data,BSTCompareFunc compare);
+
+
+/*Information*/
+void* bst_size(const BinarySearchTree *root);
+
+void* bst_height(const BinarySearchTree *root);
+
+/*Traversal*/
+
+void bst_inorder(const BinarySearchTree *root, void (*visit)(const void *data));
+
+void bst_preorder(const BinarySearchTree *root, void (*visit)(const void *data));
+
+void bst_postorder(const BinarySearchTree *root, void (*visit)(const void *data));
+
+/*Cleanup*/
+void bst_destroy(const BinarySearchTree *root, void (*destroyData)(void *data));
 
 #endif
