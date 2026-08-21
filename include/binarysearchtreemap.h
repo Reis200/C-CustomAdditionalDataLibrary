@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 
+// allows duplicates binary search tree map
 typedef struct BinarySearchTreeMap{
     char *key;  // the key: a string
     void *value; //the value: a generic pointer

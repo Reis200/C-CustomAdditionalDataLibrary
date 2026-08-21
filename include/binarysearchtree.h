@@ -1,6 +1,7 @@
 #ifndef BINARYSEARCHTREE_H
 #define BINARYSEARCHTREE_H
 
+// or binary set tree as no duplicate values allowed in this implementation
 typedef struct BinarySearchTree {
     void *data;
 
@@ -21,7 +22,7 @@ typedef int (*BSTCompareFunc)(const void *a, const void *b);
 BinarySearchTree* bst_insert(BinarySearchTree *root,void *data,BSTCompareFunc compare);
 
 /*Search*/
-void* bst_find(BinarySearchTree *root,const void *data,BSTCompareFunc compare);
+void* bst_find(const BinarySearchTree *root,const void *data,BSTCompareFunc compare);
 
 /*Remove*/
 void* bst_remove(BinarySearchTree *root,const void *data,BSTCompareFunc compare);
