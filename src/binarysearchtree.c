@@ -1,7 +1,7 @@
 #include "binarysearchtree.h"
 
 #include <stdio.h>
-
+#include <stdlib.h>
 
 /*Make / insert*/
 BinarySearchTree* bst_insert(BinarySearchTree *tree,void *data,BSTCompareFunc compare){
@@ -84,8 +84,7 @@ void* bst_find(const BinarySearchTree *tree,const void *data,BSTCompareFunc comp
 }
 
 /*Remove*/
-void* bst_remove(BinarySearchTree *tree,const void *data,BSTCompareFunc compare){
-}
+void* bst_remove(BinarySearchTree *tree,const void *data,BSTCompareFunc compare);
 
 
 /*Information*/

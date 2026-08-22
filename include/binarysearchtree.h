@@ -1,6 +1,8 @@
 #ifndef BINARYSEARCHTREE_H
 #define BINARYSEARCHTREE_H
 
+#include <stdio.h>
+
 // or binary set tree as no duplicate values allowed in this implementation
 typedef struct BinarySearchTreeNode {
   void *data;
