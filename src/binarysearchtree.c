@@ -16,7 +16,7 @@ bool bst_insert(BinarySearchTree *tree,void *data,BSTCompareFunc compare){
         return false;
     }
     if (tree->root == NULL){
-        BinarySearchTreeNode *newNode = malloc(sizeof(*newNode));
+        AVLTreeNode *newNode = malloc(sizeof(*newNode));
         if (newNode == NULL){
             return false;
         }
@@ -28,8 +28,8 @@ bool bst_insert(BinarySearchTree *tree,void *data,BSTCompareFunc compare){
         return true;
     }
 
-    BinarySearchTreeNode *currentRoot = tree->root;
-    BinarySearchTreeNode *parentRoot = NULL;
+    AVLTreeNode *currentRoot = tree->root;
+    AVLTreeNode *parentRoot = NULL;
     int comparison = 0;
     while (currentRoot != NULL){
         parentRoot = currentRoot;
@@ -45,7 +45,7 @@ bool bst_insert(BinarySearchTree *tree,void *data,BSTCompareFunc compare){
             return false; 
         }
     }
-    BinarySearchTreeNode *newNode = malloc(sizeof(*newNode));
+    AVLTreeNode *newNode = malloc(sizeof(*newNode));
 
     if (newNode == NULL){
         return false;
@@ -72,7 +72,7 @@ void* bst_find(const BinarySearchTree *tree,const void *data,BSTCompareFunc comp
     if (tree == NULL || compare == NULL){
         return NULL;
     }
-    const BinarySearchTreeNode *currentNode = tree->root;
+    const AVLTreeNode *currentNode = tree->root;
     while (currentNode != NULL){
         int comparison = compare(data,currentNode->data);
         if (comparison < 0){
@@ -101,8 +101,8 @@ void* bst_remove(BinarySearchTree *tree,const void *data,BSTCompareFunc compare)
     if (tree == NULL || tree->root == NULL || compare == NULL){
         return NULL;
     }
-    BinarySearchTreeNode *currentRoot = tree->root;
-    BinarySearchTreeNode *parentRoot = NULL;
+    AVLTreeNode *currentRoot = tree->root;
+    AVLTreeNode *parentRoot = NULL;
     /*Find Node*/
     while (currentRoot != NULL){
         int comparison = compare(data,currentRoot->data);
@@ -132,8 +132,8 @@ void* bst_remove(BinarySearchTree *tree,const void *data,BSTCompareFunc compare)
        then remove the successor node instead.
     */
     if (currentRoot->left != NULL && currentRoot->right != NULL){ // if both of child is NULL case
-        BinarySearchTreeNode *successorParent = currentRoot;
-        BinarySearchTreeNode *successor = currentRoot->right;
+        AVLTreeNode *successorParent = currentRoot;
+        AVLTreeNode *successor = currentRoot->right;
 
         while (successor->left != NULL){
             successorParent = successor;
@@ -147,7 +147,7 @@ void* bst_remove(BinarySearchTree *tree,const void *data,BSTCompareFunc compare)
     /*
         At this point current node has at most one child.
     */
-    BinarySearchTreeNode *childNode = (currentRoot->left != NULL) ? currentRoot->left : currentRoot->right; 
+    AVLTreeNode *childNode = (currentRoot->left != NULL) ? currentRoot->left : currentRoot->right; 
 
     if (parentRoot == NULL){ // remove the root itself
         tree->root = childNode;
@@ -168,7 +168,7 @@ void* bst_remove(BinarySearchTree *tree,const void *data,BSTCompareFunc compare)
 static inline int bst_max_int(const int first,const int second){
     return (first > second) ? first : second;
 }
-static int bst_node_height(const BinarySearchTreeNode *node){
+static int bst_node_height(const AVLTreeNode *node){
     if (node == NULL){
         return 0;
     }
@@ -191,7 +191,7 @@ size_t bst_size(const BinarySearchTree *tree){
 // visit(root.data). One caller can print; another can sum values; another can serialise data; another can validate it.
 // The traversal algorithm remains unchanged.
 
-static void bst_node_inorder(const BinarySearchTreeNode *root, void (*visit)(const void *data)){
+static void bst_node_inorder(const AVLTreeNode *root, void (*visit)(const void *data)){
     if (root == NULL){
         return;
     }
@@ -208,7 +208,7 @@ void bst_inorder(const BinarySearchTree *tree, void (*visit)(const void *data)){
     bst_node_inorder(tree->root,visit);
 }
 
-static void bst_node_preorder(const BinarySearchTreeNode *root, void (*visit)(const void *data)){
+static void bst_node_preorder(const AVLTreeNode *root, void (*visit)(const void *data)){
     if (root == NULL){
         return;
     }
@@ -225,7 +225,7 @@ void bst_preorder(const BinarySearchTree *tree, void (*visit)(const void *data))
     bst_node_preorder(tree->root,visit);
 }
 
-static void bst_node_postorder(const BinarySearchTreeNode *root, void (*visit)(const void *data)){
+static void bst_node_postorder(const AVLTreeNode *root, void (*visit)(const void *data)){
     if (root == NULL){
         return;
     }
@@ -243,7 +243,7 @@ void bst_postorder(const BinarySearchTree *tree, void (*visit)(const void *data)
 }
 
 /*Cleanup*/
-static void bst_node_destroy(BinarySearchTreeNode *root, void (*destroyData)(void *data)){
+static void bst_node_destroy(AVLTreeNode *root, void (*destroyData)(void *data)){
     if (root == NULL){
         return;
     }
