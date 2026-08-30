@@ -5,8 +5,6 @@ OBJECTS = build/hashmap.o \
 		  build/tests_hashmap.o \
 		  build/binarysearchtree.o \
 		  build/tests_binarysearchtree.o \
-		  build/binarysearchtreemap.o \
-		  build/tests_binarysearchtreemap.o \
 		  build/dynamicarray.o \
 		  build/tests_dynamicarray.o \
 		  build/hashset.o \
@@ -19,8 +17,6 @@ OBJECTS = build/hashmap.o \
 		  build/tests_queue.o \
 		  build/stack.o \
 		  build/tests_stack.o \
-		  build/treeset.o \
-		  build/tests_treeset.o \
 		  build/tests_main.o 
 
 all: $(TARGET)
@@ -32,13 +28,7 @@ build/binarysearchtree.o: src/binarysearchtree.c include/binarysearchtree.h | bu
 	$(CC) $(CFLAGS) -c src/binarysearchtree.c -o build/binarysearchtree.o
 
 build/tests_binarysearchtree.o: tests/tests_binarysearchtree.c tests/tests.h include/binarysearchtree.h | build
-	$(CC) $(CFLAGS) -c tests/tests_binarysearchtree.c -o build/tests_binarysearchtree.o 
-
-build/binarysearchtreemap.o: src/binarysearchtreemap.c include/binarysearchtreemap.h | build
-	$(CC) $(CFLAGS) -c src/binarysearchtreemap.c -o build/binarysearchtreemap.o
-
-build/tests_binarysearchtreemap.o: tests/tests_binarysearchtreemap.c tests/tests.h include/binarysearchtreemap.h | build
-	$(CC) $(CFLAGS) -c tests/tests_binarysearchtreemap.c -o build/tests_binarysearchtreemap.o 
+	$(CC) $(CFLAGS) -c tests/tests_binarysearchtree.c -o build/tests_binarysearchtree.o  
 
 build/dynamicarray.o: src/dynamicarray.c include/dynamicarray.h | build
 	$(CC) $(CFLAGS) -c src/dynamicarray.c -o build/dynamicarray.o
@@ -81,12 +71,6 @@ build/stack.o: src/stack.c include/stack.h | build
 
 build/tests_stack.o: tests/tests_stack.c tests/tests.h include/stack.h | build
 	$(CC) $(CFLAGS) -c tests/tests_stack.c -o build/tests_stack.o
-
-build/treeset.o: src/treeset.c include/treeset.h | build
-	$(CC) $(CFLAGS) -c src/treeset.c -o build/treeset.o
-
-build/tests_treeset.o: tests/tests_treeset.c tests/tests.h include/treeset.h | build
-	$(CC) $(CFLAGS) -c tests/tests_treeset.c -o build/tests_treeset.o
 
 build/tests_main.o: tests/tests_main.c tests/tests.h | build
 	$(CC) $(CFLAGS) -c tests/tests_main.c -o build/tests_main.o

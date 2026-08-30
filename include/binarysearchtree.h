@@ -5,7 +5,7 @@
 #include <stdbool.h>
 
 /*
-  bst_insert(tree, data): tree stores the pointer
+bst_insert(tree, data): tree stores the pointer
 
 bst_find(tree,data,compare): returns borrowed pointer / tree still contains/owns the node
 
