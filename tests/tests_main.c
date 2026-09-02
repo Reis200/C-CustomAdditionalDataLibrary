@@ -9,5 +9,7 @@
 #include "tests_stack.h"
 
 int main(void){
+    test_stack_capacity();
+    stack_main();
     return 0;
 }
