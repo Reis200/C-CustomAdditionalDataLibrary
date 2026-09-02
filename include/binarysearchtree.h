@@ -16,12 +16,12 @@ bst_destroy(tree, destroyData): all remaining nodes destroyed, destroyData(data)
 
 // or binary set tree as no duplicate values allowed in this implementation
 // AVL = Adelson-Velsky and Landis tree -> self-balancing binary search tree
-typedef struct {
+typedef struct AVLTreeNode{
   void *data;
-  struct BinarySearchTreeNode *left;
-  struct BinarySearchTreeNode *right;
+  struct AVLTreeNode *left;
+  struct AVLTreeNode *right;
   int height; // root height is 0 then 1,2,3 etc.
-}AVLTreeNode;
+} AVLTreeNode;
 
 typedef struct {
   AVLTreeNode *root;
