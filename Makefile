@@ -13,6 +13,8 @@ OBJECTS = build/hashmap.o \
           build/tests_linkedlist.o \
 		  build/maybe.o \
           build/tests_maybe.o \
+		  build/either.o \
+          build/tests_either.o \
           build/multiset.o \
           build/tests_multiset.o \
           build/queue.o \
@@ -68,6 +70,12 @@ build/maybe.o: src/maybe.c include/maybe.h | build
 
 build/tests_maybe.o: tests/tests_maybe.c tests/tests.h include/maybe.h | build
 	$(CC) $(CFLAGS) -c tests/tests_maybe.c -o build/tests_maybe.o
+
+build/either.o: src/either.c include/either.h | build
+	$(CC) $(CFLAGS) -c src/either.c -o build/either.o
+
+build/tests_either.o: tests/tests_either.c tests/tests.h include/either.h | build
+	$(CC) $(CFLAGS) -c tests/tests_either.c -o build/tests_either.o
 
 build/multiset.o: src/multiset.c include/multiset.h | build
 	$(CC) $(CFLAGS) -c src/multiset.c -o build/multiset.o

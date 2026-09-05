@@ -30,11 +30,11 @@ Maybe* maybe_create();
 void maybe_destroy(Maybe *maybe,void (*destroyData)(void *data));
 
 // get the current MaybeState: NOTHING (NULL void *data) or Just (value address present)
-MaybeState* getState(Maybe *maybe);
+MaybeState maybe_getState(Maybe *maybe);
 
 // get the current void *data. Recommended to getState(Maybe *maybe) first or 
 // check [MaybeState: JUST] in order to access.
-void* getData(Maybe *maybe);
+void* maybe_getData(Maybe *maybe);
 
 
 #endif
