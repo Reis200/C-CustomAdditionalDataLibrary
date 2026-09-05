@@ -7,10 +7,12 @@ OBJECTS = build/hashmap.o \
           build/tests_binarysearchtree.o \
           build/dynamicarray.o \
           build/tests_dynamicarray.o \
-          build/hashset.o \
-          build/tests_hashset.o \
+          build/doublylinkedlist.o \
+          build/tests_doublylinkedlist.o \
           build/linkedlist.o \
           build/tests_linkedlist.o \
+		  build/maybe.o \
+          build/tests_maybe.o \
           build/multiset.o \
           build/tests_multiset.o \
           build/queue.o \
@@ -48,11 +50,11 @@ build/tests_hashmap.o: tests/tests_hashmap.c tests/tests.h include/hashmap.h | b
 	$(CC) $(CFLAGS) -c tests/tests_hashmap.c -o build/tests_hashmap.o
 
 
-build/hashset.o: src/hashset.c include/hashset.h | build
-	$(CC) $(CFLAGS) -c src/hashset.c -o build/hashset.o
+build/doublylinkedlist.o: src/doublylinkedlist.c include/doublylinkedlist.h | build
+	$(CC) $(CFLAGS) -c src/doublylinkedlist.c -o build/doublylinkedlist.o
 
-build/tests_hashset.o: tests/tests_hashset.c tests/tests.h include/hashset.h | build
-	$(CC) $(CFLAGS) -c tests/tests_hashset.c -o build/tests_hashset.o
+build/tests_doublylinkedlist.o: tests/tests_doublylinkedlist.c tests/tests.h include/doublylinkedlist.h | build
+	$(CC) $(CFLAGS) -c tests/tests_doublylinkedlist.c -o build/tests_doublylinkedlist.o
 
 
 build/linkedlist.o: src/linkedlist.c include/linkedlist.h | build
@@ -61,6 +63,11 @@ build/linkedlist.o: src/linkedlist.c include/linkedlist.h | build
 build/tests_linkedlist.o: tests/tests_linkedlist.c tests/tests.h include/linkedlist.h | build
 	$(CC) $(CFLAGS) -c tests/tests_linkedlist.c -o build/tests_linkedlist.o
 
+build/maybe.o: src/maybe.c include/maybe.h | build
+	$(CC) $(CFLAGS) -c src/maybe.c -o build/maybe.o
+
+build/tests_maybe.o: tests/tests_maybe.c tests/tests.h include/maybe.h | build
+	$(CC) $(CFLAGS) -c tests/tests_maybe.c -o build/tests_maybe.o
 
 build/multiset.o: src/multiset.c include/multiset.h | build
 	$(CC) $(CFLAGS) -c src/multiset.c -o build/multiset.o

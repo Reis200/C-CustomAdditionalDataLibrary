@@ -13,6 +13,7 @@ void dynamicarray_main(void);
 void hashmap_main(void);
 void hashset_main(void);
 void linkedlist_main(void);
+void maybe_main(void);
 void multiset_main(void);
 void queue_main(void);
 void stack_main(void);
