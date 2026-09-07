@@ -103,7 +103,7 @@ void stack_destroy(Stack *stack, void (*destroyData)(void *data)){
 // remove all elements while retaining capacity, with a clearly defined destruction policy. 
 // similar to destroy but pointer and memory allocated for stack and its capacity still remains. 
 // (As elements removed only size changes) + elements are freed as well so no responsibility to caller.
-// destroyData can be passed as null for stack only data. (as can not be freed)
+// destroyData can be NULL for borrowed, static, or stack-allocated data.
 void stack_clear(Stack *stack, void (*destroyData)(void *data)){ // modifies the original pointer and returns the new stack pointer with cleared stack
     if (stack == NULL){ // NULL stack case
         return;

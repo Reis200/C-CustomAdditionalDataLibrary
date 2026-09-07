@@ -13,5 +13,6 @@ void print_test_result(const char *testName, bool passed){
 
 int main(void){
     stack_main();
+    maybe_main();
     return 0;
 }
