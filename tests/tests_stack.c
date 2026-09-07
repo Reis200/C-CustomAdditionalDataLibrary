@@ -10,15 +10,15 @@ static void test_destroy_int(void *data){
     free(data);
 }
 
-static void test_destroy_bool(void *data){
-    destroy_count++;
-    free(data);
-}
+// static void test_destroy_bool(void *data){
+//     destroy_count++;
+//     free(data);
+// }
 
-static void test_destroy_string(void *data){
-    destroy_count++;
-    free(data);
-}
+// static void test_destroy_string(void *data){
+//     destroy_count++;
+//     free(data);
+// }
 
 // assumes you have sufficient space available when running this test.
 static void test_stack_create_functions_when_memory_is_available(void){
@@ -208,35 +208,119 @@ static void test_stack_is_empty(void){
 }
 
 static void test_stack_destroy_functions_as_intended(void){
-    
+    Stack *stack = stack_reserve(5);
+    int *a = malloc(sizeof(*a));
+    int *b = malloc(sizeof(*b));
+    int *c = malloc(sizeof(*c));
+    *a = 5;*b = 10;*c = 15;
+    stack_push(stack,a);
+    stack_push(stack,b);
+    stack_push(stack,c);
+
+    stack_destroy(stack,test_destroy_int);
+    if (destroy_count == 3){
+        print_test_result("test_stack_destroy_functions_as_intended",true);
+    } else{
+        print_test_result("test_stack_destroy_functions_as_intended",false);
+    }
+    // reset destroy count for future use
+    destroy_count = 0;
 }
 static void test_stack_destroy_handles_null_stack(void){
+    stack_destroy(NULL,NULL);
+    // reset destroy count for future use
+    destroy_count = 0;
 
+    print_test_result("test_stack_destroy_handles_null_stack",true);
 }
 static void test_stack_destroy_handles_non_freeable_memory(void){ // stack pointers (non-heap)
+    Stack *stack = stack_reserve(5);
+    char *a = "123";
+    char *b = "name";
+    char *c = "c is good";
+    
+    stack_push(stack,(void *)a);
+    stack_push(stack,(void *)b);
+    stack_push(stack,(void *)c);
 
+    stack_destroy(stack,NULL);// (stack,NULL) as string literals are stack variables.
+    // reset destroy count for future use
+    destroy_count = 0;
+
+    print_test_result("test_stack_destroy_handles_non_freeable_memory",true);
 }
 static void test_stack_reserve_functions_intended(void){
+    Stack *stack = stack_reserve(5);
 
-}
+    print_test_result(
+        "test_stack_reserve_functions_intended",
+        stack != NULL &&
+        stack->size == 0 &&
+        stack->capacity == 5
+    );
 
-static void test_stack_logic_is_valid_checking_invariants1(void){
-
-}
-static void test_stack_logic_is_valid_checking_invariants2(void){
-
-}
-static void test_stack_logic_is_valid_checking_invariants3(void){
-
+    stack_destroy(stack, NULL);
+    destroy_count = 0;
 }
 
 static void test_stack_clear_frees_only_internal_data(void){
+    Stack *stack = stack_reserve(5);
+    int *a = malloc(sizeof(*a));
+    int *b = malloc(sizeof(*b));
+    int *c = malloc(sizeof(*c));
+    *a = 5;*b = 10;*c = 15;
+    stack_push(stack,a);
+    stack_push(stack,b);
+    stack_push(stack,c);
 
+    stack_clear(stack,test_destroy_int);
+    if (destroy_count == 3 && stack != NULL){
+        print_test_result("test_stack_clear_frees_only_internal_data",true);
+    } else{
+        print_test_result("test_stack_clear_frees_only_internal_data",false);
+    }
+    stack_destroy(stack,NULL); // as empty stack dont forget to free memory allocated
+    // reset destroy count for future use
+    destroy_count = 0;
 }
 static void test_stack_clear_keeps_stack_capacity(void){
+    Stack *stack = stack_reserve(5);
+    int *a = malloc(sizeof(*a));
+    int *b = malloc(sizeof(*b));
+    int *c = malloc(sizeof(*c));
+    *a = 5;*b = 10;*c = 15;
+    stack_push(stack,a);
+    stack_push(stack,b);
+    stack_push(stack,c);
 
+    stack_clear(stack,test_destroy_int);
+    if (stack->capacity == 5){
+        print_test_result("test_stack_clear_keeps_stack_capacity",true);
+    } else{
+        print_test_result("test_stack_clear_keeps_stack_capacity",false);
+    }
+    stack_destroy(stack,NULL); // as empty stack dont forget to free memory allocated
+    // reset destroy count for future use
+    destroy_count = 0;
 }
 static void test_stack_clear_handles_non_freeable_memory(void){ // stack pointers (non-heap)
+    Stack *stack = stack_reserve(5);
+    char *a = "test1";
+    char *b = "test2";
+    char *c = "test3";
+    stack_push(stack,a);
+    stack_push(stack,b);
+    stack_push(stack,c);
+
+    stack_clear(stack,NULL); // as string literals stack only
+    if (stack->capacity == 5){
+        print_test_result("test_stack_clear_handles_non_freeable_memory",true);
+    } else{
+        print_test_result("test_stack_clear_handles_non_freeable_memory",false);
+    }
+    stack_destroy(stack,NULL); // as empty stack dont forget to free memory allocated
+    // reset destroy count for future use
+    destroy_count = 0;
 }
 
 void stack_main(void){
@@ -265,9 +349,7 @@ void stack_main(void){
     test_stack_destroy_handles_non_freeable_memory(); // stack pointers (non-heap)
 
     test_stack_reserve_functions_intended();
-    test_stack_logic_is_valid_checking_invariants1();
-    test_stack_logic_is_valid_checking_invariants2();
-    test_stack_logic_is_valid_checking_invariants3();
+    
     test_stack_clear_frees_only_internal_data();
     test_stack_clear_keeps_stack_capacity();
     test_stack_clear_handles_non_freeable_memory(); // stack pointers (non-heap)

@@ -32,6 +32,7 @@ Either* either_create(EitherState eitherState, void *data);
 void either_destroy(Either *either,void (*destroyData)(void *data));
 
 // get the current EitherState: LEFT or RIGHT
+// do not access RIGHT when the state is LEFT or vice versa. As implemented via union
 EitherState either_getState(Either *either);
 
 // get the current void *data. Based on LEFT or RIGHT state.
