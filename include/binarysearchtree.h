@@ -2,6 +2,7 @@
 #define BINARYSEARCHTREE_H
 
 #include <stddef.h>
+#include <stdio.h>
 #include <stdbool.h>
 
 /*
@@ -35,6 +36,11 @@ typedef struct {
     > 0 if a > b    
 */
 typedef int (*BSTCompareFunc)(const void *a, const void *b);
+
+/*
+ Print an element function pointer type
+*/
+typedef int (*BSTPrintFunc)(FILE *out, void *data);
 
 
 /*Make / insert*/

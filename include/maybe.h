@@ -47,13 +47,13 @@ MaybeState maybe_getState(const Maybe *maybe);
 // get the current void *data. [borrowed read-only access]
 const void* maybe_getData(const Maybe *maybe);
 
-// modify void *data. Also previous data needs to be destroyed safely so a function pointer required.
+// modify void *data. Also previous data needs to be destroyed safely so a function pointer required (can be null if not needed).
 // true = successful (modified and changed)
 // false = unsuccessful
 // INVARIANT:
 // NOTHING <=> data == NULL
 // JUST    <=> data != NULL
-bool maybe_modifyData(Maybe *maybe, void *newData, void (*destroyPreviousData)(void *data));
+bool maybe_setData(Maybe *maybe, void *newData, void (*destroyPreviousData)(void *data));
 
 
 #endif

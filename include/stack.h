@@ -18,6 +18,7 @@ typedef struct {
     size_t size; // number of live elements in the stack / also identifies top position and provides O(1) size/empty queries.
 } Stack;
 
+
 // produce a valid empty stack
 Stack* stack_create(void);
 
