@@ -171,3 +171,32 @@ bool either_setData(Either *either, EitherState newState, void *newData, void (*
     }
     return true;
 }
+
+// print out either for debugging
+// caller needs to define how to print out element within their either.
+// Prints either if it is LEFT or RIGHT (valid Either containing a value).
+// Prints EITHER_INVALID or NONE if there is no value present and corresponding condition met.
+void either_printEither(const Either *either, void (*print_func)(const void *)){
+    if (either == NULL){
+        printf("[EITHER_INVALID]");
+        return;
+    } else if (print_func == NULL){
+        return;
+    }
+
+
+    printf("[");
+    switch (either_getState(either)){
+        case RIGHT:
+            print_func(either->data.right);
+            break;
+        case LEFT:
+            print_func(either->data.left);
+            break;
+        case EITHER_INVALID:
+        case NONE:
+            printf("NONE");
+            break;
+    }
+    printf("]\n");
+}

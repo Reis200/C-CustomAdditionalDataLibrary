@@ -55,9 +55,10 @@ Stack* stack_reserve(size_t reservedSize);
 // expose current storage capacity for diagnostics or benchmarking.
 size_t stack_capacity(const Stack *stack);
 
-// accepts a pointer to a printf-like function as a parameter to print out each element
-// caller could to define how to print out each element within their stack,
-// built in printf accepted. 
-void stack_print_stack(const Stack *stack, void (*print_func)(const void *));
+// print out each element of stack for debugging
+// caller needs to define how to print out each element within their stack.
+// Prints stack from bottom to top.
+// The rightmost element is the current top. 
+void stack_printStack(const Stack *stack, void (*print_func)(const void *));
 
 #endif

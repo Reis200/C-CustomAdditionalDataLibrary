@@ -55,5 +55,10 @@ const void* maybe_getData(const Maybe *maybe);
 // JUST    <=> data != NULL
 bool maybe_setData(Maybe *maybe, void *newData, void (*destroyPreviousData)(void *data));
 
+// print out maybe for debugging
+// caller needs to define how to print out element within their maybe.
+// Prints maybe if it is JUST (valid Maybe containing a value).
+// Prints NOTHING or MAYBE_INVALID if there is no value present and corresponding condition met.
+void maybe_printMaybe(const Maybe *maybe, void (*print_func)(const void *));
 
 #endif

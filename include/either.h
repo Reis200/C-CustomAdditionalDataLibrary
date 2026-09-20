@@ -71,4 +71,11 @@ const void* either_getData(const Either *either);
 // not a normal stored state.
 bool either_setData(Either *either, EitherState newState, void *newData, void (*destroyPreviousData)(void *data));
 
+
+// print out either for debugging
+// caller needs to define how to print out element within their either.
+// Prints either if it is LEFT or RIGHT (valid Either containing a value).
+// Prints EITHER_INVALID or NONE if there is no value present and corresponding condition met.
+void either_printEither(const Either *either, void (*print_func)(const void *));
+
 #endif

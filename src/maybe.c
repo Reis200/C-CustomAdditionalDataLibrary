@@ -81,3 +81,25 @@ bool maybe_setData(Maybe *maybe, void *newData, void (*destroyPreviousData)(void
     }
     return true;
 }
+
+// print out maybe for debugging
+// caller needs to define how to print out element within their maybe.
+// Prints maybe if it is JUST (valid Maybe containing a value).
+// Prints NOTHING or MAYBE_INVALID if there is no value present and corresponding condition met.
+void maybe_printMaybe(const Maybe *maybe, void (*print_func)(const void *)){
+    if (maybe == NULL){
+        printf("[MAYBE_INVALID]");
+        return;
+    } else if (print_func == NULL){
+        return;
+    }
+    
+    printf("[");
+    if (maybe->maybeState == JUST){
+        print_func(maybe);
+    } else{
+        printf("NOTHING");
+    }
+    
+    printf("]\n");
+}

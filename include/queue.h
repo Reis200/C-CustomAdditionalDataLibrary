@@ -72,4 +72,10 @@ void queue_clear(Queue *queue,void (*destroyData)(void *data));
 // expose current storage capacity for diagnostics or benchmarking.
 size_t queue_capacity(const Queue *queue);
 
+// print out each element of queue for debugging
+// caller needs to define how to print out each element within their queue.
+// Prints queue from front to last item queued.
+// The rightmost element is the last item to be dequeued.
+void queue_printQueue(const Queue *queue, void (*print_func)(const void *));
+
 #endif

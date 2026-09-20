@@ -146,7 +146,7 @@ size_t stack_capacity(const Stack *stack){
 // caller needs to define how to print out each element within their stack.
 // Prints stack from bottom to top.
 // The rightmost element is the current top.
-void stack_print_stack(const Stack *stack, void (*print_func)(const void *)){
+void stack_printStack(const Stack *stack, void (*print_func)(const void *)){
     if (stack == NULL || print_func == NULL){
         return;
     }
