@@ -15,5 +15,6 @@ int main(void){
     stack_main();
     maybe_main();
     either_main();
+    queue_main();
     return 0;
 }

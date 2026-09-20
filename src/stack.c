@@ -142,3 +142,21 @@ size_t stack_capacity(const Stack *stack){
     return stack == NULL ? 0 : stack->capacity;
 }
 
+// print out each element of stack for debugging
+// caller needs to define how to print out each element within their stack.
+// Prints stack from bottom to top.
+// The rightmost element is the current top.
+void stack_print_stack(const Stack *stack, void (*print_func)(const void *)){
+    if (stack == NULL || print_func == NULL){
+        return;
+    }
+    
+    printf("BOTTOM -> [");
+    for (size_t index = 0; index < stack->size; index++){
+        print_func(stack->items[index]);
+        if (index + 1 < stack->size){
+            printf(", ");
+        }
+    }
+    printf("] <- TOP\n");
+}
