@@ -127,6 +127,9 @@ Stack* stack_reserve(size_t reservedSize){
     if (stack == NULL){
         return NULL;
     }
+    if (reservedSize == 0) {
+        return stack;
+    }
     stack->items = malloc(reservedSize * sizeof(*stack->items));
     if (stack->items == NULL){
         free(stack);

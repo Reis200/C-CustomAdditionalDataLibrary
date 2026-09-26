@@ -14,6 +14,7 @@ front -> Allows dequeue to advance without shifting elements.
 */
 /*
  Representation invariants
+ (self note size_t physicalIndex = (queue->front_index + index) % queue->capacity; !!! )
 - 0 <= size <= capacity whenever the queue has allocated storage.
 - If capacity is non-zero, front is always a valid physical index from 0 to capacity - 1.
 - If size is zero, there is no live front element even if the numeric front field contains a
@@ -37,11 +38,13 @@ Queue* queue_create(void);
 
 // Append one data pointer to the logical rear of the given queue.
 // => enqueue given data.
-void queue_enqueue(Queue *queue,void *data);
+// true -> if successful
+// false -> if unable to do the operation or error occurred.
+bool queue_enqueue(Queue *queue,void *data);
 
 // Observe the current front without removing it from the given queue.
 // => peek given data.
-void queue_peek(Queue *queue,void *data);
+const void* queue_peek(Queue *queue);
 
 // Remove the current front and return the exact stored pointer from the given queue.
 // The caller becomes responsible for the removed value. So freeing is caller's responsibility.
