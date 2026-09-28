@@ -1,166 +1,300 @@
-#include <stdlib.h>
-
 #include "stack.h"
 
+#include <stdlib.h>
+#include <stdio.h>
 
-// produce a valid empty stack
-Stack* stack_create(void){
-    Stack* stack = malloc(sizeof(*stack));
+
+/* ============================================================
+   Construction
+   ============================================================ */
+
+// Create a valid empty stack.
+//
+// Initial state:
+//     items    = NULL
+//     capacity = 0
+//     size     = 0
+//
+// The Stack structure itself is allocated on the heap.
+Stack *stack_create(void){
+    Stack *stack = malloc(sizeof(*stack));
+
     if (stack == NULL){
         return NULL;
     }
+
     stack->size = 0;
     stack->capacity = 0;
     stack->items = NULL;
+
     return stack;
 }
 
-// true  = inserted
-// false = duplicate / failure
-// stack stores the pointer while the value remains present.
-bool stack_push(Stack *stack,void *data){
-    if (stack == NULL || data == NULL){
-        return false;
-    }
-    // default empty stack just initialised with no data allocated
-    if (stack->capacity == 0){ // size and capacity 0 pre-condition
-        stack->capacity = 10; // array of size 10 is initialised by default
-        stack->items = calloc(stack->capacity,sizeof(*stack->items));
-        if (stack->items == NULL){
-            return false; // allocation failed so we cant insert so operation failed
-        }
-    }
-    // grow if not enough space
-    if (stack->size == stack->capacity){
-        size_t newCapacity = stack->capacity * 2; // doubles so capacity increases gets less and less
-        void **items = realloc(stack->items,sizeof(*stack->items) * newCapacity);
-        if (items == NULL){
-            return false; // allocation failed so we cant insert so operation failed
-        }
-        stack->capacity = newCapacity; // doubles so capacity increases gets less and less
-        stack->items = items; 
-        items = NULL;
-    }
-    // push once
-    stack->items[stack->size] = data;
-    stack->size++; // size also tells us the current index location to access
-    return true;
-}
 
-// returns the top element of the stack without removing the element from stack
-const void* stack_peek(const Stack *stack){
-    if (stack != NULL && stack->size > 0){
-        return stack->items[stack->size - 1];
-    }
-    return NULL;
-}
-
-// responsibility for the removed value returns to the caller.
-void* stack_pop(Stack *stack){
-    if (stack == NULL){
-        return NULL;
-    }
-    if (stack->size > 0){
-        stack->size--; // if size is non zero the top position is size - 1
-        void *data = stack->items[stack->size];
-        stack->items[stack->size] = NULL;
-        return data;
-    }
-    return NULL;
-}
-
-// number of live stack data present
-size_t stack_size(const Stack *stack){
-    return stack == NULL ? 0 : stack->size;
-}
-
-bool stack_is_empty(const Stack *stack){
-    return stack == NULL || stack->size == 0; // Null stack is treated as empty
-}
-
-// callers pointer is invalid after destruction
-// it destroys the pointers present within the stack too, so caller just needs to pass in how to destroy internal data, rest is handled caller does not need to free any more memory.
-// destroyData can be passed as null for stack only data. (as can not be freed)
-void stack_destroy(Stack *stack, void (*destroyData)(void *data)){
-    if (stack == NULL){
-        return;
-    }
-    // we know that items has capacity data allocated so it must be freed first before freeing stack
-    for (size_t stack_size = stack->size; stack_size > 0;stack_size--){ // each individual data is destroyed
-        if (destroyData != NULL){
-            destroyData(stack->items[stack_size-1]);
-        }
-        stack->items[stack_size-1] = NULL;
-    } 
-    // finally items freed
-    free(stack->items);
-    stack->items = NULL;
-    stack->size = 0;
-    stack->capacity = 0;
-    // finally stack freed
-    free(stack);
-}
-
-// remove all elements while retaining capacity, with a clearly defined destruction policy. 
-// similar to destroy but pointer and memory allocated for stack and its capacity still remains. 
-// (As elements removed only size changes) + elements are freed as well so no responsibility to caller.
-// destroyData can be NULL for borrowed, static, or stack-allocated data.
-void stack_clear(Stack *stack, void (*destroyData)(void *data)){ // modifies the original pointer and returns the new stack pointer with cleared stack
-    if (stack == NULL){ // NULL stack case
-        return;
-    }
-    // we know that items has capacity data allocated so it must be freed first before freeing stack (but this time do not free items nor stack just delete the data within)
-    for (size_t stack_size = stack->size; stack_size > 0;stack_size--){ // each individual data is destroyed
-        if (destroyData != NULL){
-            destroyData(stack->items[stack_size-1]);
-        }
-        stack->items[stack_size-1] = NULL;
-    } 
-    // do not free items just set size to 0 as capacity unchanged
-    stack->size = 0;
-}
-
-
-// preallocate enough capacity for a known workload.
-// if allocation fails returns NULL so NULL checks necessary by the caller.
-Stack* stack_reserve(size_t reservedSize){
+// Create an empty stack with capacity reserved for
+// reservedSize elements.
+//
+// The returned stack still has size == 0.
+//
+// Returns NULL if allocation fails.
+Stack *stack_reserve(size_t reservedSize){
     Stack *stack = stack_create();
+
     if (stack == NULL){
         return NULL;
     }
-    if (reservedSize == 0) {
+
+    if (reservedSize == 0){
         return stack;
     }
-    stack->items = malloc(reservedSize * sizeof(*stack->items));
+
+    stack->items =
+        malloc(reservedSize * sizeof(*stack->items));
+
     if (stack->items == NULL){
         free(stack);
         stack = NULL;
         return NULL;
     }
+
     stack->capacity = reservedSize;
+
     return stack;
 }
 
-// expose current storage capacity for diagnostics or benchmarking.
+
+/* ============================================================
+   Insertion
+   ============================================================ */
+
+// Push one data pointer onto the logical top of the stack.
+//
+// The stack stores the pointer itself; the pointed-to object
+// is not copied.
+//
+// true  -> insertion succeeded
+// false -> invalid arguments or allocation failure
+bool stack_push(Stack *stack, void *data){
+    if (stack == NULL || data == NULL){
+        return false;
+    }
+
+    // Initial allocation for an empty stack with no backing storage.
+    if (stack->capacity == 0){
+
+        // Default allocation of 10 pointer slots.
+        stack->capacity = 10;
+
+        stack->items =
+            calloc(stack->capacity, sizeof(*stack->items));
+
+        if (stack->items == NULL){
+            return false;
+        }
+    }
+
+    // Grow the backing array if there is no remaining capacity.
+    if (stack->size == stack->capacity){
+
+        size_t newCapacity =
+            stack->capacity * 2;
+
+        void **items =
+            realloc(
+                stack->items,
+                sizeof(*stack->items) * newCapacity
+            );
+
+        if (items == NULL){
+            return false;
+        }
+
+        stack->capacity = newCapacity;
+        stack->items = items;
+
+        items = NULL;
+    }
+
+    // Push exactly once at the next free position.
+    stack->items[stack->size] = data;
+    stack->size++;
+
+    return true;
+}
+
+
+/* ============================================================
+   Access
+   ============================================================ */
+
+// Return the current logical top element without removing it.
+//
+// The returned pointer is borrowed.
+const void *stack_peek(const Stack *stack){
+    if (stack != NULL && stack->size > 0){
+        return stack->items[stack->size - 1];
+    }
+
+    return NULL;
+}
+
+
+/* ============================================================
+   Removal
+   ============================================================ */
+
+// Remove and return the current logical top element.
+//
+// Ownership of the removed pointer is transferred to the caller.
+void *stack_pop(Stack *stack){
+    if (stack == NULL){
+        return NULL;
+    }
+
+    if (stack->size > 0){
+
+        // After decrementing size, the new size value is also
+        // the physical index of the old top element.
+        stack->size--;
+
+        void *data =
+            stack->items[stack->size];
+
+        stack->items[stack->size] = NULL;
+
+        return data;
+    }
+
+    return NULL;
+}
+
+
+/* ============================================================
+   Observation
+   ============================================================ */
+
+// Return the number of live elements currently stored.
+size_t stack_size(const Stack *stack){
+    return stack == NULL ? 0 : stack->size;
+}
+
+
+// Return the number of pointer slots currently allocated.
 size_t stack_capacity(const Stack *stack){
     return stack == NULL ? 0 : stack->capacity;
 }
 
-// print out each element of stack for debugging
-// caller needs to define how to print out each element within their stack.
-// Prints stack from bottom to top.
-// The rightmost element is the current top.
-void stack_printStack(const Stack *stack, void (*print_func)(const void *)){
+
+// Return true if the stack contains no live elements.
+//
+// A NULL stack is treated as empty.
+bool stack_is_empty(const Stack *stack){
+    return stack == NULL || stack->size == 0;
+}
+
+
+/* ============================================================
+   Lifetime Management
+   ============================================================ */
+
+// Remove all live elements while retaining the backing
+// allocation and current capacity.
+//
+// If destroyData is non-NULL, it is called once for each
+// live stored pointer.
+//
+// Pass NULL for borrowed, static, or stack-allocated data.
+void stack_clear(Stack *stack,void (*destroyData)(void *data)){
+    if (stack == NULL){
+        return;
+    }
+
+    for (size_t stack_size = stack->size;
+         stack_size > 0;
+         stack_size--){
+
+        if (destroyData != NULL){
+            destroyData(
+                stack->items[stack_size - 1]
+            );
+        }
+
+        stack->items[stack_size - 1] = NULL;
+    }
+
+    // Retain the backing allocation and capacity.
+    stack->size = 0;
+}
+
+
+// Destroy the stack.
+//
+// If destroyData is non-NULL, it is called once for each
+// live stored pointer before the backing array and Stack
+// structure are freed.
+//
+// The caller's Stack pointer is invalid after this call.
+//
+// Pass NULL for borrowed, static, or stack-allocated data.
+void stack_destroy(Stack *stack,void (*destroyData)(void *data)){
+    if (stack == NULL){
+        return;
+    }
+
+    for (size_t stack_size = stack->size;
+         stack_size > 0;
+         stack_size--){
+
+        if (destroyData != NULL){
+            destroyData(
+                stack->items[stack_size - 1]
+            );
+        }
+
+        stack->items[stack_size - 1] = NULL;
+    }
+
+    // Free the backing array.
+    free(stack->items);
+
+    stack->items = NULL;
+    stack->size = 0;
+    stack->capacity = 0;
+
+    // Finally free the Stack structure.
+    free(stack);
+}
+
+
+/* ============================================================
+   Debugging
+   ============================================================ */
+
+// Print every live stack element from bottom to top.
+//
+// Example:
+//     BOTTOM -> [A, B, C] <- TOP
+//
+// The caller defines how one stored element is printed.
+//
+// This function does not modify the stack.
+void stack_print(const Stack *stack,void (*print_func)(const void *data)){
     if (stack == NULL || print_func == NULL){
         return;
     }
-    
+
     printf("BOTTOM -> [");
-    for (size_t index = 0; index < stack->size; index++){
+
+    for (size_t index = 0;
+         index < stack->size;
+         index++){
+
         print_func(stack->items[index]);
+
         if (index + 1 < stack->size){
             printf(", ");
         }
     }
+
     printf("] <- TOP\n");
 }

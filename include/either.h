@@ -1,81 +1,195 @@
-#ifndef EITHER_H 
+#ifndef EITHER_H
 #define EITHER_H
 
 #include <stdbool.h>
 
 /*
-The Either type represents values with two possibilities: 
-a value of type Either has either data.left or data.right.
-The Either type is sometimes used to represent a value which is either correct or an error; 
-by convention, the data.left for error value and the data.right for the correct value. 
-(mnemonic: "right" also means "correct").
+    Generic Either Type
 
-There is also NONE for absence of either RIGHT or LEFT.
-EITHER_INVALID is a query result for an invalid/null container,
-not a normal stored state.
+    An Either represents a value with two possible alternatives.
+
+    By convention:
+    - LEFT  is commonly used for an error or alternative value.
+    - RIGHT is commonly used for a successful or expected value.
+
+    States:
+    - EITHER_INVALID:
+          Used as a query result when the Either pointer itself is NULL.
+          This should not normally be stored inside a valid Either object.
+
+    - NONE:
+          Represents a valid Either containing no active value.
+
+    - LEFT:
+          Represents a valid Either containing a value in data.left.
+
+    - RIGHT:
+          Represents a valid Either containing a value in data.right.
+
+    Representation invariants:
+    - LEFT:
+          active union member is data.left
+          data.left != NULL
+
+    - RIGHT:
+          active union member is data.right
+          data.right != NULL
+
+    - NONE:
+          no active value
+          union storage is NULL
+
+    - EITHER_INVALID:
+          query result for an invalid or NULL Either pointer;
+          not a normal stored state.
 */
+
 typedef enum {
-    EITHER_INVALID,NONE,LEFT,RIGHT
+    EITHER_INVALID,
+    NONE,
+    LEFT,
+    RIGHT
 } EitherState;
+
 
 typedef struct {
     EitherState eitherState;
+
     union {
-        void *left; // "Left" value
-        void *right; // "Right" value
+        void *left;
+        void *right;
     } data;
 } Either;
 
-// make an Either type with EitherState and data initiliased.
-// if eitherState EITHER_INVALID or NONE defaults to LEFT.
-// also allocates a memory on heap.
-// as void *data is assigned to either left or right it is not copied so shallow copy (only address)
-// simpler words it is the same pointer put into Either container
-Either* either_create(EitherState eitherState, void *data);
 
-// free and release associated heap memory related to Either struct
-// destroyData function pointer in order to destroy the void *data contents and free them up safely
-// so caller needs to pass in a way to destroy the specific type
-void either_destroy(Either *either,void (*destroyData)(void *data));
+/* ============================================================
+   Construction
+   ============================================================ */
 
-// remove either data, with a clearly defined destruction policy. 
-// similar to destroy but pointer and memory allocated for either still remains. 
-// elements are freed as well so no responsibility to caller.
-// destroyData can be NULL for borrowed, static, or stack-allocated data.
+// Construct an Either using eitherState and data.
+//
+// If data == NULL:
+//     eitherState becomes NONE.
+//
+// If data != NULL:
+//     RIGHT stores data in data.right.
+//     LEFT stores data in data.left.
+//     NONE or EITHER_INVALID default to LEFT.
+//
+// The pointer itself is stored directly; the pointed-to object
+// is not copied.
+//
+// The Either structure itself is allocated on the heap.
+//
+// Returns NULL if allocation fails.
+Either *either_create(EitherState eitherState,void *data);
+
+
+/* ============================================================
+   Access
+   ============================================================ */
+
+// Return the current EitherState.
+//
+// Returns:
+//     EITHER_INVALID -> either is NULL
+//     NONE           -> valid Either containing no value
+//     LEFT           -> valid Either containing a left value
+//     RIGHT          -> valid Either containing a right value
+EitherState either_getState(const Either *either);
+
+
+// Return the currently active stored value without removing it.
+//
+// If the state is LEFT, data.left is returned.
+// If the state is RIGHT, data.right is returned.
+//
+// The returned pointer is borrowed and read-only.
+//
+// Returns NULL if:
+//     - either is NULL
+//     - either is in the NONE state
+//     - either is in the EITHER_INVALID state
+const void *either_getData(const Either *either);
+
+
+/* ============================================================
+   Modification
+   ============================================================ */
+
+// Replace the currently active value and state.
+//
+// If destroyPreviousData is non-NULL, it is called on the
+// previously stored value before replacement, unless the same
+// pointer remains stored.
+//
+// newState must be one of:
+//     NONE
+//     LEFT
+//     RIGHT
+//
+// If newState == NONE or newData == NULL, the Either becomes NONE.
+//
+// If newState == LEFT, newData becomes the active data.left value.
+//
+// If newState == RIGHT, newData becomes the active data.right value.
+//
+// The new pointer is stored directly; the pointed-to object
+// is not copied.
+//
+// Returns:
+//     true  -> modification succeeded
+//     false -> either is NULL or newState is invalid
+bool either_setData(Either *either,EitherState newState,void *newData,void (*destroyPreviousData)(void *data));
+
+
+/* ============================================================
+   Lifetime Management
+   ============================================================ */
+
+// Remove the currently active value while retaining the
+// Either structure.
+//
+// If destroyData is non-NULL, it is called on the currently
+// active stored value.
+//
+// Pass NULL for borrowed, static, or stack-allocated data.
+//
+// After clearing:
+//     eitherState = NONE
+//     union storage = NULL
 void either_clear(Either *either,void (*destroyData)(void *data));
 
 
-// get the current EitherState: LEFT or RIGHT or NONE or EITHER_INVALID; NONE if either is has no data or EITHER_INVALID if either is NULL
-// do not access RIGHT when the state is LEFT or vice versa. As implemented via union
-EitherState either_getState(const Either *either);
-
-// get the current void *data. Based on LEFT or RIGHT state. If NONE or EITHER_INVALID state or NULL either then NULL returned
-const void* either_getData(const Either *either);
-
-// modify void *data. Also previous data needs to be destroyed safely so a function pointer required (can be null if not needed).
-// true = successful (modified and changed)
-// false = unsuccessful
-// INVARIANT:
-// eitherState == LEFT
-//     => active union member is data.left
-//     => data.left != NULL
-
-// eitherState == RIGHT
-//     => active union member is data.right
-//     => data.right != NULL
-
-// eitherState == NONE
-//     => no active value
-//     => union storage is NULL
-// EITHER_INVALID is a query result for an invalid/null container,
-// not a normal stored state.
-bool either_setData(Either *either, EitherState newState, void *newData, void (*destroyPreviousData)(void *data));
+// Destroy the Either.
+//
+// If destroyData is non-NULL, it is called on the currently
+// active stored value before the Either structure is freed.
+//
+// After this function returns, the caller's Either pointer is
+// invalid and must not be dereferenced.
+//
+// Pass NULL for borrowed, static, or stack-allocated data.
+void either_destroy(Either *either,void (*destroyData)(void *data));
 
 
-// print out either for debugging
-// caller needs to define how to print out element within their either.
-// Prints either if it is LEFT or RIGHT (valid Either containing a value).
-// Prints EITHER_INVALID or NONE if there is no value present and corresponding condition met.
-void either_printEither(const Either *either, void (*print_func)(const void *));
+/* ============================================================
+   Debugging
+   ============================================================ */
+
+// Print the current Either state for debugging.
+//
+// If the Either contains LEFT or RIGHT, print_func is used
+// to print the active stored value.
+//
+// If the Either contains NONE, "NONE" is printed.
+//
+// If either is NULL, "EITHER_INVALID" is printed.
+//
+// The caller supplies print_func to define how one stored
+// value should be printed.
+//
+// This function does not modify the Either.
+void either_print(const Either *either,void (*print_func)(const void *data));
 
 #endif

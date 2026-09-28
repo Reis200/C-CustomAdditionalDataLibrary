@@ -3,62 +3,149 @@
 
 #include <stdbool.h>
 
-/* 
-    Maybe states similar to Haskell (if not familiar it is a type where it encapsulates optional value)
-    NOTHING is when there is no value present so void *data will be also NULL
-    Just is when there is a value present so void *data will contain an address
+/*
+    Generic Maybe Type
+
+    A Maybe represents an optional value.
+
+    States:
+    - MAYBE_INVALID:
+          Used as a query result when the Maybe pointer itself is NULL.
+          This should not normally be stored inside a valid Maybe object.
+
+    - NOTHING:
+          Represents a valid Maybe containing no value.
+
+    - JUST:
+          Represents a valid Maybe containing a value.
+
+    Representation invariants:
+    - NOTHING <=> data == NULL
+    - JUST    <=> data != NULL
 */
+
 typedef enum {
-    MAYBE_INVALID, // the Maybe pointer itself is invalid 
-    NOTHING, // valid Maybe, no value
-    JUST, // valid Maybe containing a value
+    MAYBE_INVALID,
+    NOTHING,
+    JUST
 } MaybeState;
 
-/*
-    Using Maybe is a good way to deal with errors or exceptional cases without resorting to 
-    drastic measures such as error.
-    INVARIANT:
-    NOTHING <=> data == NULL
-    JUST    <=> data != NULL
-*/
+
 typedef struct {
     MaybeState maybeState;
     void *data;
 } Maybe;
 
-// make an empty Maybe type with Nothing state and NULL void*.
-// also allocates a memory on heap.
-Maybe* maybe_create(void);
 
-// free and release associated heap memory related to Maybe struct
-// destroyData function pointer in order to destroy the void *data contents and free them up safely
-// so caller needs to pass in a way to destroy the specific type
-void maybe_destroy(Maybe *maybe,void (*destroyData)(void *data));
+/* ============================================================
+   Construction
+   ============================================================ */
 
-// remove maybe data, with a clearly defined destruction policy. 
-// similar to destroy but pointer and memory allocated for maybe still remains. 
-// elements are freed as well so no responsibility to caller.
-// destroyData can be NULL for borrowed, static, or stack-allocated data.
-void maybe_clear(Maybe *maybe,void (*destroyData)(void *data));
+// Construct a valid empty Maybe.
+//
+// Initial state:
+//     maybeState = NOTHING
+//     data       = NULL
+//
+// The Maybe structure itself is allocated on the heap.
+//
+// Returns NULL if allocation fails.
+Maybe *maybe_create(void);
 
-// get the current MaybeState: NOTHING (NULL void *data) or Just (value address present)
+
+/* ============================================================
+   Access
+   ============================================================ */
+
+// Return the current MaybeState.
+//
+// Returns:
+//     MAYBE_INVALID -> maybe is NULL
+//     NOTHING       -> valid Maybe containing no value
+//     JUST          -> valid Maybe containing a value
 MaybeState maybe_getState(const Maybe *maybe);
 
-// get the current void *data. [borrowed read-only access]
-const void* maybe_getData(const Maybe *maybe);
 
-// modify void *data. Also previous data needs to be destroyed safely so a function pointer required (can be null if not needed).
-// true = successful (modified and changed)
-// false = unsuccessful
-// INVARIANT:
-// NOTHING <=> data == NULL
-// JUST    <=> data != NULL
-bool maybe_setData(Maybe *maybe, void *newData, void (*destroyPreviousData)(void *data));
+// Return the currently stored value without removing it.
+//
+// The returned pointer is borrowed and read-only.
+//
+// Returns NULL if:
+//     - maybe is NULL
+//     - maybe is in the NOTHING state
+const void *maybe_getData(const Maybe *maybe);
 
-// print out maybe for debugging
-// caller needs to define how to print out element within their maybe.
-// Prints maybe if it is JUST (valid Maybe containing a value).
-// Prints NOTHING or MAYBE_INVALID if there is no value present and corresponding condition met.
-void maybe_printMaybe(const Maybe *maybe, void (*print_func)(const void *));
+
+/* ============================================================
+   Modification
+   ============================================================ */
+
+// Replace the currently stored value with newData.
+//
+// If destroyPreviousData is non-NULL, it is called on the
+// previously stored value before replacement.
+//
+// The new pointer is stored directly; the pointed-to object
+// is not copied.
+//
+// The implementation must preserve:
+//
+//     NOTHING <=> data == NULL
+//     JUST    <=> data != NULL
+//
+// Returns:
+//     true  -> modification succeeded
+//     false -> maybe is NULL
+bool maybe_setData(Maybe *maybe,void *newData,void (*destroyPreviousData)(void *data));
+
+
+/* ============================================================
+   Lifetime Management
+   ============================================================ */
+
+// Remove the currently stored value while retaining the
+// Maybe structure.
+//
+// If destroyData is non-NULL, it is called on the currently
+// stored value before the Maybe becomes empty.
+//
+// Pass NULL for borrowed, static, or stack-allocated data.
+//
+// After clearing:
+//     maybeState = NOTHING
+//     data       = NULL
+void maybe_clear(Maybe *maybe,void (*destroyData)(void *data));
+
+
+// Destroy the Maybe.
+//
+// If destroyData is non-NULL, it is called on the currently
+// stored value before the Maybe structure is freed.
+//
+// After this function returns, the caller's Maybe pointer is
+// invalid and must not be dereferenced.
+//
+// Pass NULL for borrowed, static, or stack-allocated data.
+void maybe_destroy(Maybe *maybe,void (*destroyData)(void *data));
+
+
+/* ============================================================
+   Debugging
+   ============================================================ */
+
+// Print the current Maybe state for debugging.
+//
+// If the Maybe contains JUST, print_func is used to print
+// the stored value.
+//
+// If the Maybe contains NOTHING, "NOTHING" is printed.
+//
+// If maybe is NULL, "MAYBE_INVALID" is printed.
+//
+// The caller supplies print_func to define how one stored
+// value should be printed.
+//
+// This function does not modify the Maybe.
+void maybe_print(const Maybe *maybe,void (*print_func)(const void *data));
 
 #endif
