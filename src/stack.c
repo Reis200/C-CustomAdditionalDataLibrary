@@ -47,6 +47,7 @@ bool stack_push(Stack *stack,void *data){
     return true;
 }
 
+// returns the top element of the stack without removing the element from stack
 const void* stack_peek(const Stack *stack){
     if (stack != NULL && stack->size > 0){
         return stack->items[stack->size - 1];

@@ -27,6 +27,7 @@ Stack* stack_create(void);
 // stack stores the pointer while the value remains present.
 bool stack_push(Stack *stack,void *data);
 
+// returns the top element of the stack without removing the element from stack
 const void* stack_peek(const Stack *stack);
 
 // responsibility for the removed value returns to the caller.

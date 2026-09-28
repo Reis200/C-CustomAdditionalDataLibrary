@@ -4,81 +4,182 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-/*An attempt to implement efficient circular queues...*/
 /*
-Why for the design choice:
-items -> Stores references to user-ownedvalues.
-capacity -> Defines the valid physical index range and when growth is required.
-size -> Makes emptiness/fullness unambiguous and provides O(1) size queries.
-front -> Allows dequeue to advance without shifting elements.
-*/
-/*
- Representation invariants
- (self note size_t physicalIndex = (queue->front_index + index) % queue->capacity; !!! )
-- 0 <= size <= capacity whenever the queue has allocated storage.
-- If capacity is non-zero, front is always a valid physical index from 0 to capacity - 1.
-- If size is zero, there is no live front element even if the numeric front field contains a
-conventional value such as zero.
-- Exactly size array slots belong to the logical queue sequence.
-- Walking size positions from front with wrap-around yields elements in FIFO order.
-- Unused slots are not part of the queue and must never be returned to the caller.
+    Generic Circular Queue
+
+    Design:
+    - items stores references to user-provided data.
+    - capacity defines the number of pointer slots currently allocated.
+    - size stores the number of live elements and provides O(1) size checks.
+    - front_index identifies the physical index of the logical front element.
+
+    Representation invariants:
+    - 0 <= size <= capacity.
+    - If capacity == 0, items may be NULL.
+    - If capacity > 0, items points to storage for at least
+      capacity elements of type void *.
+    - If size > 0, front_index is always in the range
+      [0, capacity - 1].
+    - If size == 0, there is no live front element even if
+      front_index contains the conventional value 0.
+    - Exactly size physical slots belong to the logical queue.
+    - Walking size positions from front_index with wrap-around
+      yields the elements in FIFO order.
+    - Unused slots are not part of the abstract queue and must
+      never be returned to the caller.
+
+    Physical index formula:
+
+        physicalIndex =
+            (front_index + logicalIndex) % capacity
 */
 
 typedef struct {
-    void **items;
-    size_t capacity; // Number of pointer slots (in memory) currently allocated.
-    size_t size; // Number of live elements currently in the queue. + provides O(1) size queries.
-    size_t front_index; // Physical index containing the logical front when size is non-zero (size > 0).
+    void **items;          // Circular backing array of stored pointers.
+    size_t capacity;       // Number of pointer slots currently allocated.
+    size_t size;           // Number of live elements currently stored.
+    size_t front_index;    // Physical index of the logical front element.
 } Queue;
 
-// Produce a valid empty queue value.
-// make an empty Queue type with NULL items, capacity = 0, size = 0, front_index = 0.
-// also allocates a memory on heap.
-Queue* queue_create(void);
 
-// Append one data pointer to the logical rear of the given queue.
-// => enqueue given data.
-// true -> if successful
-// false -> if unable to do the operation or error occurred.
+/* ============================================================
+   Construction
+   ============================================================ */
+
+// Create a valid empty queue.
+//
+// Initial state:
+//     items       = NULL
+//     capacity    = 0
+//     size        = 0
+//     front_index = 0
+//
+// Returns NULL if allocation of the Queue structure fails.
+Queue *queue_create(void);
+
+
+// Create an empty queue with capacity reserved for at least
+// reservedSize elements.
+//
+// The returned queue still has size == 0.
+//
+// Returns NULL if allocation fails.
+Queue *queue_reserve(size_t reservedSize);
+
+
+/* ============================================================
+   Insertion
+   ============================================================ */
+
+// Append data to the logical rear of the queue.
+//
+// The queue stores the pointer itself; the pointed-to object
+// is not copied.
+//
+// The backing array grows automatically if necessary.
+//
+// Returns:
+//     true  -> insertion succeeded
+//     false -> invalid arguments or allocation failure
 bool queue_enqueue(Queue *queue,void *data);
 
-// Observe the current front without removing it from the given queue.
-// => peek given data.
-const void* queue_peek(Queue *queue);
 
-// Remove the current front and return the exact stored pointer from the given queue.
-// The caller becomes responsible for the removed value. So freeing is caller's responsibility.
-void* queue_dequeue(Queue *queue);
+/* ============================================================
+   Access
+   ============================================================ */
 
-// preallocate enough capacity for a known workload.
-// if allocation fails returns NULL so NULL checks necessary by the caller.
-Queue* queue_reserve(size_t reservedSize);
+// Return the current logical front element without removing it.
+//
+// The returned pointer is borrowed and remains owned according
+// to the queue's existing ownership policy.
+//
+// Returns NULL if the queue is NULL or empty.
+const void *queue_peek(const Queue *queue);
 
-// Return the number of elements within the queue.
-size_t queue_size(Queue *queue);
 
-// true  -> empty queue or NULL queue
-// false -> non-empty queue 
-bool queue_is_empty(Queue *queue); 
+/* ============================================================
+   Removal
+   ============================================================ */
 
-// callers pointer is invalid after destruction
-// it destroys the pointers present within the queue too, so caller just needs to pass in how to destroy internal data, rest is handled caller does not need to free any more memory.
-// destroyData can be passed as null for stack only data. (as can not be freed)
-void queue_destroy(Queue *queue, void (*destroyData)(void *data));
+// Remove and return the current logical front element.
+//
+// Ownership of the removed pointer is transferred to the caller.
+//
+// Returns NULL if the queue is NULL or empty.
+void *queue_dequeue(Queue *queue);
 
-// remove all elements while retaining capacity, with a clearly defined destruction policy. 
-// similar to destroy but pointer and memory allocated for queue and its capacity still remains. 
-// (As elements removed only size changes) + elements are freed as well so no responsibility to caller.
-// destroyData can be NULL for borrowed, static, or stack-allocated data.
-void queue_clear(Queue *queue,void (*destroyData)(void *data));
 
-// expose current storage capacity for diagnostics or benchmarking.
+/* ============================================================
+   Observation
+   ============================================================ */
+
+// Return the number of live elements currently stored.
+//
+// Returns 0 for a NULL queue.
+size_t queue_size(const Queue *queue);
+
+
+// Return the number of pointer slots currently allocated.
+//
+// Returns 0 for a NULL queue.
 size_t queue_capacity(const Queue *queue);
 
-// print out each element of queue for debugging
-// caller needs to define how to print out each element within their queue.
-// Prints queue from front to last item queued.
-// The rightmost element is the last item to be dequeued.
-void queue_printQueue(const Queue *queue, void (*print_func)(const void *));
+
+// Return true if the queue contains no live elements.
+//
+// A NULL queue is treated as empty.
+bool queue_is_empty(const Queue *queue);
+
+
+/* ============================================================
+   Lifetime Management
+   ============================================================ */
+
+// Remove all live elements while retaining the backing allocation
+// and current capacity.
+//
+// If destroyData is non-NULL, it is called once for each live
+// stored pointer.
+//
+// Pass NULL for borrowed, static, or stack-allocated data.
+//
+// After clearing:
+//     size        = 0
+//     front_index = 0
+//     capacity    = unchanged
+//     items       = unchanged
+void queue_clear(Queue *queue,void (*destroyData)(void *data));
+
+
+// Destroy the queue.
+//
+// If destroyData is non-NULL, it is called once for each live
+// stored pointer before the backing array and Queue structure
+// are freed.
+//
+// After this function returns, the caller's Queue pointer is
+// invalid and must not be dereferenced.
+//
+// Pass NULL for borrowed, static, or stack-allocated data.
+void queue_destroy(Queue *queue,void (*destroyData)(void *data));
+
+
+/* ============================================================
+   Debugging
+   ============================================================ */
+
+// Print every live element in logical FIFO order.
+//
+// Elements are printed from the logical front to the logical rear.
+//
+// Example:
+//
+//     FRONT -> [A, B, C, D] <- BACK
+//
+// The caller supplies print_func to define how one stored value
+// should be printed.
+//
+// This function does not modify the queue.
+void queue_print(const Queue *queue,void (*print_func)(const void *data));
 
 #endif
