@@ -334,10 +334,7 @@ void queue_print(const Queue *queue,void (*print_func)(const void *data)){
 
     printf("FRONT -> [");
 
-    for (size_t index = 0;
-         index < queue->size;
-         index++){
-
+    for (size_t index = 0;index < queue->size;index++){
         size_t physicalIndex =
             (queue->front_index + index)
             % queue->capacity;

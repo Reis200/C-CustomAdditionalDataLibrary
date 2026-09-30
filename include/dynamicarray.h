@@ -103,6 +103,8 @@ const void *array_get(const DynamicArray *array,size_t index);
 // The new pointer is stored directly; the pointed-to object
 // is not copied.
 //
+// newData is the same pointer at that index (duplicate) then nothing changed.
+//
 // Returns:
 //     true  -> replacement succeeded
 //     false -> array is NULL, newData is invalid, or index is invalid
