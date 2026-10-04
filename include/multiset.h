@@ -162,27 +162,27 @@ typedef void *(*MultisetCloneFunc)(const void *data);
 
 // Represents one distinct logical value and its multiplicity.
 typedef struct {
-    void *data;      // Canonical stored pointer for this value.
-    size_t count;    // Number of logical occurrences.
+   void *data;      // Canonical stored pointer for this value.
+   size_t count;    // Number of logical occurrences.
 } MultisetEntry;
 
 
 // The Multiset manages a dynamic array of distinct entries.
 typedef struct {
-    MultisetEntry *entries;
+   MultisetEntry *entries;
 
-    size_t distinctSize;
-    size_t totalSize;
-    size_t capacity;
+   size_t distinctSize;
+   size_t totalSize;
+   size_t capacity;
 
-    MultisetComparisonFunc multisetCompareFunc;
+   MultisetComparisonFunc multisetCompareFunc;
 
-    // Optional.
-    //
-    // NULL means that non-final occurrence removal operates
-    // purely by changing multiplicity and cannot materialize
-    // an independently owned copy.
-    MultisetCloneFunc multisetCloneFunc;
+   // Optional.
+   //
+   // NULL means that non-final occurrence removal operates
+   // purely by changing multiplicity and cannot materialize
+   // an independently owned copy.
+   MultisetCloneFunc multisetCloneFunc;
 } Multiset;
 
 
@@ -218,7 +218,7 @@ typedef struct {
 //     for non-final removals.
 //
 // Returns NULL if allocation fails.
-Multiset *multiset_create(MultisetComparisonFunc multisetComparisonFunc,MultisetCloneFunc multisetCloneFunc);
+Multiset *multiset_create(MultisetComparisonFunc multisetCompareFunc,MultisetCloneFunc multisetCloneFunc);
 
 
 // Construct an empty multiset with capacity reserved for at least
@@ -235,7 +235,7 @@ Multiset *multiset_create(MultisetComparisonFunc multisetComparisonFunc,Multiset
 // multisetCloneFunc may be NULL.
 //
 // Returns NULL if allocation fails.
-Multiset *multiset_reserve(size_t reservedSize,MultisetComparisonFunc multisetComparisonFunc,MultisetCloneFunc multisetCloneFunc);
+Multiset *multiset_reserve(size_t reservedSize,MultisetComparisonFunc multisetCompareFunc,MultisetCloneFunc multisetCloneFunc);
 
 
 /* ============================================================
@@ -519,7 +519,7 @@ size_t multiset_capacity(const Multiset *multiset);
 //     distinctSize == 0
 //     totalSize    == 0
 //
-// A NULL multiset may be treated as empty according to the
+// A NULL multiset is treated as empty according to the
 // library's NULL-object convention.
 bool multiset_is_empty(const Multiset *multiset);
 
@@ -583,7 +583,7 @@ void multiset_destroy(Multiset *multiset,void (*destroyData)(void *data));
 //
 // Example:
 //
-//     { A x3, B x2, C x1 }
+//     [A x 3, B x 2, C x 1]
 //
 // The canonical stored pointer for each distinct entry is passed
 // to print_func exactly once.
