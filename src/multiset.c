@@ -72,12 +72,19 @@ Multiset *multiset_create(MultisetComparisonFunc multisetCompareFunc,MultisetClo
 //
 // multisetCloneFunc may be NULL.
 //
+// For reservedSize == or cases reserving will overflow as SIZE_MAX is reached, just the multiset without any allocation returned.
+//
 // Returns NULL if allocation fails.
 Multiset *multiset_reserve(size_t reservedSize,MultisetComparisonFunc multisetCompareFunc,MultisetCloneFunc multisetCloneFunc){
    Multiset *multiset = multiset_create(multisetCompareFunc, multisetCloneFunc);
    if (multiset == NULL){
       return NULL;
    }
+
+   if (reservedSize == 0 || reservedSize > SIZE_MAX / sizeof(*multiset->entries)){
+      return multiset;
+   }
+
    multiset->entries = malloc(sizeof(*multiset->entries) * reservedSize);
    if (multiset->entries == NULL){
       free(multiset);
@@ -122,7 +129,9 @@ Multiset *multiset_reserve(size_t reservedSize,MultisetComparisonFunc multisetCo
 //     pointer B -> "hello"
 //
 // If A is already the canonical stored pointer, adding B does
-// not cause B itself to be stored.
+// not cause B itself to be stored. So A.count is increased, also very importantly
+// !!! B is freed within the function so DO NOT ACCESS B after insertion
+// if clone policy established and count > 1 a copy will be granted from removal.
 //
 // The ownership policy for such a redundant incoming pointer
 // must therefore remain clear to the caller.
@@ -141,20 +150,56 @@ bool multiset_add(Multiset *multiset,void *data){
    if (multiset == NULL || data == NULL){
       return false;
    }
-   for (size_t entryIndex = 0; entryIndex < multiset->distinctSize; entryIndex++){
-      if (multiset->multisetCompareFunc(multiset->entries[entryIndex].data, data)){
-         multiset->entries[entryIndex].count++;
-         multiset->totalSize++;
-         return true;
+   if (multiset->entries != NULL){
+      for (size_t entryIndex = 0; entryIndex < multiset->distinctSize; entryIndex++){
+         if (multiset->multisetCompareFunc(multiset->entries[entryIndex].data, data)){
+            if (multiset->totalSize + 1 > SIZE_MAX || multiset->entries[entryIndex].count + 1 > SIZE_MAX){
+               return false; // check for [increments could theoretically overflow for absurdly huge arrays]
+            }
+            free(data); // data is freed as now within the representation
+            multiset->entries[entryIndex].count++;
+            multiset->totalSize++;
+            return true;
+         }
       }
+      if (multiset->distinctSize == multiset->capacity){
+         // resize and expand the array (doubling * 2 of capacity used for amortised O(1) resizing)
+         if (multiset->capacity > SIZE_MAX / 2){
+            return false; // check for [allocation-size multiplication could theoretically overflow for absurdly huge arrays]
+         }
+         size_t newCapacity = multiset->capacity * 2;
+         MultisetEntry *items = malloc(sizeof(*multiset->entries) * newCapacity);
+         if (items == NULL){
+            return false;
+         }
+         multiset->capacity = newCapacity;
+         for (size_t i = 0; i < multiset->distinctSize; i++){
+            items[i] = multiset->entries[i];
+         }
+         free(multiset->entries); // free the old allocation
+         multiset->entries = items;
+      }
+   } else{
+      // default size of 5 (MultisetEntry slot) is allocated
+      size_t defaultCapacity = 5;
+      multiset->entries = malloc(sizeof(*multiset->entries) * defaultCapacity);
+      if (multiset->entries == NULL){
+         return false;
+      }
+      multiset->capacity = defaultCapacity;
    }
-
+   
    MultisetEntry *newEntry = malloc(sizeof(*newEntry));
    if (newEntry == NULL){
       return false;
    }
    newEntry->data = data;
    newEntry->count = 1;
+   multiset->entries[multiset->distinctSize].data = newEntry->data;
+   multiset->entries[multiset->distinctSize].count = newEntry->count;
+   if (multiset->totalSize + 1 > SIZE_MAX || multiset->distinctSize + 1 > SIZE_MAX){
+      return false; // check for [increments could theoretically overflow for absurdly huge arrays]
+   }
    multiset->distinctSize++;
    multiset->totalSize++;
    return true;
@@ -173,7 +218,7 @@ bool multiset_add(Multiset *multiset,void *data){
 //     > 0 -> number of logical occurrences
 //
 // The supplied data pointer acts only as a lookup key.
-size_t multiset_lookup(const Multiset *multiset,void *data){
+size_t multiset_lookup(const Multiset *multiset,const void *data){
    if (multiset == NULL || data == NULL){
       return 0;
    }
@@ -191,7 +236,7 @@ size_t multiset_lookup(const Multiset *multiset,void *data){
 // Equivalent conceptually to:
 //
 //     multiset_lookup(multiset, data) > 0
-bool multiset_contains(const Multiset *multiset,void *data){
+bool multiset_contains(const Multiset *multiset,const void *data){
    if (multiset == NULL || data == NULL){
       return false;
    }
@@ -326,7 +371,7 @@ bool multiset_contains(const Multiset *multiset,void *data){
 // IMPORTANT:
 //
 // If cloning is required but the clone function fails and
-// returns NULL, the implementation should leave the multiset
+// thus returns NULL, the implementation leaves the multiset
 // unchanged.
 //
 // This preserves operation atomicity:
@@ -340,7 +385,44 @@ bool multiset_contains(const Multiset *multiset,void *data){
 // removal, absence, or clone failure, callers needing to
 // distinguish these outcomes may eventually require a richer
 // status-returning API.
-void *multiset_remove_one(Multiset *multiset,void *data);
+void *multiset_remove_one(Multiset *multiset,void *data){
+   if (multiset == NULL || data == NULL){
+      return NULL;
+   }
+   for (size_t entryIndex = 0; entryIndex < multiset->distinctSize; entryIndex++){
+      if (multiset->multisetCompareFunc(multiset->entries[entryIndex].data, data)){
+         if (multiset->entries[entryIndex].count == 1){
+            multiset->distinctSize--;
+            multiset->totalSize -= 1;
+            void *temp = multiset->entries[entryIndex].data;
+            multiset->entries[entryIndex].data = NULL;
+            multiset->entries[entryIndex].count = 0;
+
+            // shifting the backing entries array in order to maintain the invariant: live entries occupy entries[0] through entries[distinctSize - 1]
+            for (size_t currentIndex = entryIndex; currentIndex < multiset->distinctSize - 1; currentIndex++){
+               multiset->entries[currentIndex] = multiset->entries[currentIndex + 1];
+            }
+
+            return temp;
+         } else if (multiset->entries[entryIndex].count > 1 && multiset->multisetCloneFunc != NULL){
+            void *clone = multiset->multisetCloneFunc(multiset->entries[entryIndex].data);
+            if (clone == NULL){
+               return NULL; // failed clone operation NULL returned
+            }
+            multiset->entries[entryIndex].count--;
+            multiset->totalSize--;
+            return clone;
+         } else if (multiset->entries[entryIndex].count > 1 && multiset->multisetCloneFunc == NULL){
+            multiset->entries[entryIndex].count--;
+            multiset->totalSize--;
+            // here NULL is returned but mathematical removal has succeeded as no cloning possible no value to return
+            // it is caller's responsibility to distinguish these (sorry right now before API update this is the representation)
+            return NULL;
+         } 
+      }
+   }
+   return NULL;
+}
 
 
 // Remove every logical occurrence of data.
@@ -362,7 +444,22 @@ void *multiset_remove_one(Multiset *multiset,void *data);
 //
 // Returns NULL if no matching value exists or the arguments
 // are invalid.
-void *multiset_remove_all(Multiset *multiset,void *data);
+void *multiset_remove_all(Multiset *multiset,void *data){
+   if (multiset == NULL || data == NULL){
+      return NULL;
+   }
+   for (size_t entryIndex = 0; entryIndex < multiset->distinctSize; entryIndex++){
+      if (multiset->multisetCompareFunc(multiset->entries[entryIndex].data, data)){
+         multiset->distinctSize--;
+         multiset->totalSize -= multiset->entries[entryIndex].count;
+         void *temp = multiset->entries[entryIndex].data;
+         multiset->entries[entryIndex].data = NULL;
+         multiset->entries[entryIndex].count = 0;
+         return temp;
+      }
+   }
+   return NULL;
+}
 
 
 /* ============================================================
@@ -462,7 +559,7 @@ void multiset_clear(Multiset *multiset,void (*destroyData)(void *data)){
    // clear the multiset
    for (size_t entryIndex = 0; entryIndex < multiset->distinctSize; entryIndex++){
       if (destroyData != NULL){
-         free(multiset->entries[entryIndex].data);
+         destroyData(multiset->entries[entryIndex].data);
       }
       multiset->entries[entryIndex].data = NULL;
       multiset->entries[entryIndex].count = 0;
@@ -488,13 +585,17 @@ void multiset_clear(Multiset *multiset,void (*destroyData)(void *data)){
 //
 // Pass NULL for borrowed, static, or stack-allocated data.
 void multiset_destroy(Multiset *multiset,void (*destroyData)(void *data)){
-   if (multiset == NULL || multiset->entries == NULL){
+   if (multiset == NULL){
+      return;
+   } else if (multiset->entries == NULL){
+      // destroy the whole multiset struct
+      free(multiset);
       return;
    }
    // clear the multiset
    for (size_t entryIndex = 0; entryIndex < multiset->distinctSize; entryIndex++){
       if (destroyData != NULL){
-         free(multiset->entries[entryIndex].data);
+         destroyData(multiset->entries[entryIndex].data);
       }
       multiset->entries[entryIndex].data = NULL;
       multiset->entries[entryIndex].count = 0;
@@ -535,7 +636,7 @@ void multiset_print(const Multiset *multiset,void (*print_func)(const void *data
    printf("[");
    for (size_t index = 0; index < multiset->distinctSize; index++){
       print_func(multiset->entries[index].data);
-      printf(" x %s",multiset->entries[index].count);
+      printf(" x %zu",multiset->entries[index].count);
       if(index + 1 < multiset->distinctSize){
          printf(", ");
       }

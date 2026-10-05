@@ -234,6 +234,8 @@ Multiset *multiset_create(MultisetComparisonFunc multisetCompareFunc,MultisetClo
 //
 // multisetCloneFunc may be NULL.
 //
+// For reservedSize == or cases reserving will overflow as SIZE_MAX is reached, just the multiset without any allocation returned.
+//
 // Returns NULL if allocation fails.
 Multiset *multiset_reserve(size_t reservedSize,MultisetComparisonFunc multisetCompareFunc,MultisetCloneFunc multisetCloneFunc);
 
@@ -270,7 +272,9 @@ Multiset *multiset_reserve(size_t reservedSize,MultisetComparisonFunc multisetCo
 //     pointer B -> "hello"
 //
 // If A is already the canonical stored pointer, adding B does
-// not cause B itself to be stored.
+// not cause B itself to be stored. So A.count is increased, also very importantly
+// !!! B is freed within the function so DO NOT ACCESS B after insertion
+// if clone policy established and count > 1 a copy will be granted from removal.
 //
 // The ownership policy for such a redundant incoming pointer
 // must therefore remain clear to the caller.
@@ -300,7 +304,7 @@ bool multiset_add(Multiset *multiset,void *data);
 //     > 0 -> number of logical occurrences
 //
 // The supplied data pointer acts only as a lookup key.
-size_t multiset_lookup(const Multiset *multiset,void *data);
+size_t multiset_lookup(const Multiset *multiset,const void *data);
 
 
 // Return whether at least one logically equal value exists.
@@ -308,7 +312,7 @@ size_t multiset_lookup(const Multiset *multiset,void *data);
 // Equivalent conceptually to:
 //
 //     multiset_lookup(multiset, data) > 0
-bool multiset_contains(const Multiset *multiset,void *data);
+bool multiset_contains(const Multiset *multiset,const void *data);
 
 
 /* ============================================================
@@ -433,7 +437,7 @@ bool multiset_contains(const Multiset *multiset,void *data);
 // IMPORTANT:
 //
 // If cloning is required but the clone function fails and
-// returns NULL, the implementation should leave the multiset
+// thus returns NULL, the implementation leaves the multiset
 // unchanged.
 //
 // This preserves operation atomicity:

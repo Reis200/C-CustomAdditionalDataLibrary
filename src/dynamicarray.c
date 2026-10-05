@@ -33,6 +33,8 @@ DynamicArray *array_create(void){
 //
 // The returned array still has size == 0.
 //
+// For reservedSize == or cases reserving will overflow as SIZE_MAX is reached, just the dynamicArray without any allocation returned.
+//
 // Returns NULL if allocation fails.
 DynamicArray *array_reserve(size_t reservedSize){
    DynamicArray *dynamicArray = array_create();
