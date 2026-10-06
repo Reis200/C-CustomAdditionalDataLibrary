@@ -81,7 +81,42 @@
 
     Therefore multiplicity represents logical occurrences,
     not separately stored physical objects.
+   
+    Canonical value stability:
 
+    - While a value is stored as a canonical multiset entry, the
+      logical value used by MultisetComparisonFunc must remain stable.
+
+    - The caller must not mutate a stored object in a way that changes
+      how that object compares with values already stored in the
+      multiset.
+
+    Example:
+
+        Suppose two stored objects are initially distinct:
+
+            A -> id = 10
+            B -> id = 20
+
+        and MultisetComparisonFunc compares objects by id.
+
+        If the caller later mutates B so that:
+
+            B -> id = 10
+
+        then A and B now compare equal even though they occupy separate
+        MultisetEntry objects.
+
+        This violates the multiset representation invariant that no two
+        live entries compare equal.
+
+    - Mutating parts of a stored object that do not affect the equality
+      relation is permitted, provided doing so does not otherwise violate
+      the user's own object invariants.
+
+    - The multiset does not monitor external mutation of pointed-to data.
+      Maintaining logical equality stability while an object is stored is
+      therefore the caller's responsibility.
 
     Optional cloning:
 
@@ -120,7 +155,32 @@
 //     true  -> value1 and value2 are logically equal
 //     false -> value1 and value2 are logically different
 //
-// The comparison function must not modify either value.
+// The comparison function defines the equality relation used by the
+// multiset for insertion, lookup, containment, and removal.
+//
+// The comparison function:
+//
+//     - must not modify either argument
+//     - must return consistent results for the same logical values
+//     - should represent an equality relation
+//
+// In particular, logical equality should be:
+//
+//     reflexive:
+//         compare(x, x) == true
+//
+//     symmetric:
+//         compare(a, b) == compare(b, a)
+//
+//     transitive:
+//         if compare(a, b) and compare(b, c) are true,
+//         compare(a, c) should also be true
+//
+// While an object is stored as a canonical value, the caller must not
+// mutate it in a way that changes this equality relation.
+//
+// Violating these requirements may break the representation invariant
+// that no two live MultisetEntry objects compare equal.
 typedef bool (*MultisetComparisonFunc)(const void *value1,const void *value2);
 
 
@@ -201,23 +261,33 @@ typedef struct {
 //     multisetCompareFunc  = supplied comparison function
 //     multisetCloneFunc    = supplied clone function or NULL
 //
-// multisetComparisonFunc defines logical equality and is
-// required for operations involving values.
+// multisetComparisonFunc defines logical equality and is required.
 //
-// multisetCloneFunc is optional.
+// multisetComparisonFunc must not be NULL.
+//
+// multisetCloneFunc is optional and may be NULL.
 //
 // If multisetCloneFunc != NULL:
 //
-//     multiset_remove_one() may materialize an independently
-//     owned copy when removing one occurrence while other equal
-//     occurrences remain.
+//     multiset_remove_one() may materialize an independently owned
+//     copy when removing one occurrence while other equal occurrences
+//     remain.
 //
 // If multisetCloneFunc == NULL:
 //
-//     the multiset behaves as a mathematical counting multiset
-//     for non-final removals.
+//     the multiset behaves as a mathematical counting multiset for
+//     non-final removals.
 //
-// Returns NULL if allocation fails.
+// Returns:
+//
+//     non-NULL -> construction succeeded
+//
+//     NULL     -> construction failed because:
+//
+//                 - allocation of the Multiset structure failed, or
+//                 - multisetCompareFunc was NULL
+//
+// No partially constructed Multiset is returned on failure.
 Multiset *multiset_create(MultisetComparisonFunc multisetCompareFunc,MultisetCloneFunc multisetCloneFunc);
 
 
@@ -232,13 +302,35 @@ Multiset *multiset_create(MultisetComparisonFunc multisetCompareFunc,MultisetClo
 //
 // still occupies only one MultisetEntry slot.
 //
-// multisetCloneFunc may be NULL.
+// multisetCompareFunc is required and must not be NULL.
 //
-// For reservedSize == 0 empty multiset returned
+// multisetCloneFunc is optional and may be NULL.
 //
-// cases reserving will overflow as SIZE_MAX is reached, NULL is returned.
+// If reservedSize == 0:
 //
-// Returns NULL if allocation fails.
+//     a valid empty multiset is returned with:
+//
+//         entries      == NULL
+//         capacity     == 0
+//         distinctSize == 0
+//         totalSize    == 0
+//
+// If reservedSize cannot be represented safely as a backing-array
+// allocation, construction fails.
+//
+// Returns:
+//
+//     non-NULL -> construction and requested reservation succeeded,
+//                 or reservedSize was 0
+//
+//     NULL     -> construction failed because:
+//
+//                 - multisetCompareFunc was NULL
+//                 - the requested allocation size would overflow
+//                 - allocation of the Multiset structure failed
+//                 - allocation of the backing entries array failed
+//
+// No partially constructed Multiset is returned on failure.
 Multiset *multiset_reserve(size_t reservedSize,MultisetComparisonFunc multisetCompareFunc,MultisetCloneFunc multisetCloneFunc);
 
 
@@ -275,8 +367,8 @@ Multiset *multiset_reserve(size_t reservedSize,MultisetComparisonFunc multisetCo
 //
 // If A is already the canonical stored pointer, adding B does
 // not cause B itself to be stored. So A.count is increased, also very importantly
-// !!! B must be freed by the caller; if clone policy established and count > 1 a 
-// copy will be granted from removal.
+// !!! the multiset does not take ownership of the redundant pointer; responsibility remains with the caller. 
+// if clone policy established and count > 1 a copy will be granted from removal.
 //
 // The clone callback is NOT used during insertion.
 //

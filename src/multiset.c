@@ -20,23 +20,33 @@
 //     multisetCompareFunc  = supplied comparison function
 //     multisetCloneFunc    = supplied clone function or NULL
 //
-// multisetComparisonFunc defines logical equality and is
-// required for operations involving values.
+// multisetComparisonFunc defines logical equality and is required.
 //
-// multisetCloneFunc is optional.
+// multisetComparisonFunc must not be NULL.
+//
+// multisetCloneFunc is optional and may be NULL.
 //
 // If multisetCloneFunc != NULL:
 //
-//     multiset_remove_one() may materialize an independently
-//     owned copy when removing one occurrence while other equal
-//     occurrences remain.
+//     multiset_remove_one() may materialize an independently owned
+//     copy when removing one occurrence while other equal occurrences
+//     remain.
 //
 // If multisetCloneFunc == NULL:
 //
-//     the multiset behaves as a mathematical counting multiset
-//     for non-final removals.
+//     the multiset behaves as a mathematical counting multiset for
+//     non-final removals.
 //
-// Returns NULL if allocation fails.
+// Returns:
+//
+//     non-NULL -> construction succeeded
+//
+//     NULL     -> construction failed because:
+//
+//                 - allocation of the Multiset structure failed, or
+//                 - multisetCompareFunc was NULL
+//
+// No partially constructed Multiset is returned on failure.
 Multiset *multiset_create(MultisetComparisonFunc multisetCompareFunc,MultisetCloneFunc multisetCloneFunc){
     Multiset *multiset = malloc(sizeof(*multiset));
     if (multiset == NULL){
@@ -70,13 +80,35 @@ Multiset *multiset_create(MultisetComparisonFunc multisetCompareFunc,MultisetClo
 //
 // still occupies only one MultisetEntry slot.
 //
-// multisetCloneFunc may be NULL.
+// multisetCompareFunc is required and must not be NULL.
 //
-// For reservedSize == 0 empty multiset returned
+// multisetCloneFunc is optional and may be NULL.
 //
-// cases reserving will overflow as SIZE_MAX is reached, NULL is returned.
+// If reservedSize == 0:
 //
-// Returns NULL if allocation fails.
+//     a valid empty multiset is returned with:
+//
+//         entries      == NULL
+//         capacity     == 0
+//         distinctSize == 0
+//         totalSize    == 0
+//
+// If reservedSize cannot be represented safely as a backing-array
+// allocation, construction fails.
+//
+// Returns:
+//
+//     non-NULL -> construction and requested reservation succeeded,
+//                 or reservedSize was 0
+//
+//     NULL     -> construction failed because:
+//
+//                 - multisetCompareFunc was NULL
+//                 - the requested allocation size would overflow
+//                 - allocation of the Multiset structure failed
+//                 - allocation of the backing entries array failed
+//
+// No partially constructed Multiset is returned on failure.
 Multiset *multiset_reserve(size_t reservedSize,MultisetComparisonFunc multisetCompareFunc,MultisetCloneFunc multisetCloneFunc){
    Multiset *multiset = multiset_create(multisetCompareFunc, multisetCloneFunc);
    if (multiset == NULL){
@@ -88,6 +120,7 @@ Multiset *multiset_reserve(size_t reservedSize,MultisetComparisonFunc multisetCo
    }
 
    if (reservedSize > SIZE_MAX / sizeof(*multiset->entries)){
+      free(multiset);
       return NULL;
    }
 
@@ -134,10 +167,23 @@ Multiset *multiset_reserve(size_t reservedSize,MultisetComparisonFunc multisetCo
 //     pointer A -> "hello"
 //     pointer B -> "hello"
 //
-// If A is already the canonical stored pointer, adding B does
-// not cause B itself to be stored. So A.count is increased, also very importantly
-// !!! B must be freed by the caller; if clone policy established and count > 1 a 
-// copy will be granted from removal.
+// Ownership:
+//
+// If data becomes the canonical pointer of a newly created distinct
+// entry, the multiset retains that pointer until it is removed,
+// cleared, or destroyed.
+//
+// If data compares equal to an existing canonical value but is a
+// different pointer, the multiset does NOT retain or take ownership
+// of that redundant pointer. Responsibility for that pointer remains
+// with the caller.
+//
+// Therefore, after:
+//
+//     multiset_add(multiset, data)
+//
+// the caller must not assume that every successfully supplied pointer
+// has been retained by the multiset.
 //
 // The clone callback is NOT used during insertion.
 //
@@ -193,12 +239,11 @@ bool multiset_add(Multiset *multiset,void *data){
       }
       multiset->capacity = defaultCapacity;
    }
-   
-   multiset->entries[multiset->distinctSize].data = data;
-   multiset->entries[multiset->distinctSize].count = 1;
    if (multiset->totalSize >= SIZE_MAX || multiset->distinctSize >= SIZE_MAX){
       return false; // check for [increments could theoretically overflow for absurdly huge arrays]
    }
+   multiset->entries[multiset->distinctSize].data = data;
+   multiset->entries[multiset->distinctSize].count = 1;
    multiset->distinctSize++;
    multiset->totalSize++;
    return true;
