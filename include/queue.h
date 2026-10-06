@@ -63,6 +63,9 @@ Queue *queue_create(void);
 //
 // The returned queue still has size == 0.
 //
+// For reservedSize == 0 empty queue returned
+// cases reserving will overflow as SIZE_MAX is reached, NULL is returned.
+//
 // Returns NULL if allocation fails.
 Queue *queue_reserve(size_t reservedSize);
 

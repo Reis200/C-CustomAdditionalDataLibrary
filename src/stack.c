@@ -31,10 +31,13 @@ Stack *stack_create(void){
 }
 
 
-// Create an empty stack with capacity reserved for
+// Create an empty stack with capacity reserved for at least
 // reservedSize elements.
 //
 // The returned stack still has size == 0.
+//
+// For reservedSize == 0 empty stack returned
+// cases reserving will overflow as SIZE_MAX is reached, NULL is returned.
 //
 // Returns NULL if allocation fails.
 Stack *stack_reserve(size_t reservedSize){
@@ -48,8 +51,12 @@ Stack *stack_reserve(size_t reservedSize){
         return stack;
     }
 
-    stack->items =
-        malloc(reservedSize * sizeof(*stack->items));
+    if (reservedSize > SIZE_MAX / sizeof(*stack->items)){
+        free(stack);
+        return NULL;
+    }
+
+    stack->items = malloc(reservedSize * sizeof(*stack->items));
 
     if (stack->items == NULL){
         free(stack);

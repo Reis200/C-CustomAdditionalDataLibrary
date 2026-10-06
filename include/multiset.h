@@ -234,7 +234,9 @@ Multiset *multiset_create(MultisetComparisonFunc multisetCompareFunc,MultisetClo
 //
 // multisetCloneFunc may be NULL.
 //
-// For reservedSize == or cases reserving will overflow as SIZE_MAX is reached, just the multiset without any allocation returned.
+// For reservedSize == 0 empty multiset returned
+//
+// cases reserving will overflow as SIZE_MAX is reached, NULL is returned.
 //
 // Returns NULL if allocation fails.
 Multiset *multiset_reserve(size_t reservedSize,MultisetComparisonFunc multisetCompareFunc,MultisetCloneFunc multisetCloneFunc);
@@ -273,11 +275,8 @@ Multiset *multiset_reserve(size_t reservedSize,MultisetComparisonFunc multisetCo
 //
 // If A is already the canonical stored pointer, adding B does
 // not cause B itself to be stored. So A.count is increased, also very importantly
-// !!! B is freed within the function so DO NOT ACCESS B after insertion
-// if clone policy established and count > 1 a copy will be granted from removal.
-//
-// The ownership policy for such a redundant incoming pointer
-// must therefore remain clear to the caller.
+// !!! B must be freed by the caller; if clone policy established and count > 1 a 
+// copy will be granted from removal.
 //
 // The clone callback is NOT used during insertion.
 //

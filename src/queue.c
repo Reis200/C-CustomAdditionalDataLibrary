@@ -34,6 +34,8 @@ Queue *queue_create(void){
 
 // Preallocate enough capacity for a known workload.
 // If allocation fails, NULL is returned.
+// For reservedSize == 0 empty queue returned
+// cases reserving will overflow as SIZE_MAX is reached, NULL is returned.
 Queue *queue_reserve(size_t reservedSize){
     Queue *queue = queue_create();
 
@@ -45,8 +47,12 @@ Queue *queue_reserve(size_t reservedSize){
         return queue;
     }
 
-    queue->items =
-        malloc(reservedSize * sizeof(*queue->items));
+    if (reservedSize > SIZE_MAX / sizeof(*queue->items)){
+        free(queue);
+        return NULL;
+    }
+
+    queue->items = malloc(reservedSize * sizeof(*queue->items));
 
     if (queue->items == NULL){
         free(queue);

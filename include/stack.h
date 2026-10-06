@@ -49,6 +49,9 @@ Stack *stack_create(void);
 //
 // The returned stack still has size == 0.
 //
+// For reservedSize == 0 empty stack returned
+// cases reserving will overflow as SIZE_MAX is reached, NULL is returned.
+//
 // Returns NULL if allocation fails.
 Stack *stack_reserve(size_t reservedSize);
 
