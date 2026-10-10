@@ -338,14 +338,12 @@ bool singlyLinkedList_contains(const SinglyLinkedList *singlyLinkedList,const vo
         return false;
     }
 
-    LinkedListNode *currentNode = singlyLinkedList->head;
-    size_t currentIndex = 0;      
+    LinkedListNode *currentNode = singlyLinkedList->head; 
     while (currentNode != NULL){
         if (singlyLinkedListComparisonFunc(currentNode->data, data)){
             return true; // as found 
         }
         currentNode = currentNode->next;
-        currentIndex++;
     }
     return false; // not present within the structure
 }
@@ -427,7 +425,29 @@ void *singlyLinkedList_remove_first(SinglyLinkedList *singlyLinkedList){
 // Expected complexity:
 //
 //     O(n)
-void *singlyLinkedList_remove_last(SinglyLinkedList *singlyLinkedList);
+void *singlyLinkedList_remove_last(SinglyLinkedList *singlyLinkedList){
+    if (singlyLinkedList = NULL || singlyLinkedList->size == 0){
+        return NULL;
+    }
+    LinkedListNode *tailNode = singlyLinkedList->tail;
+    void *data = tailNode->data;
+    if (singlyLinkedList->size > 1){
+        LinkedListNode *currentNode = singlyLinkedList->head;      
+        while (currentNode != NULL){
+            currentNode = currentNode->next;
+            if (currentNode->next->next == NULL){
+                singlyLinkedList->tail = currentNode->next;
+                break;
+            }
+        }
+    } else{
+        singlyLinkedList->head = NULL;
+        singlyLinkedList->tail = NULL;
+        singlyLinkedList->size = 0;
+    }
+    free(tailNode); // free the LinkedListNode
+    return data;
+}
 
 
 // Remove the node at logical index.
@@ -461,7 +481,28 @@ void *singlyLinkedList_remove_last(SinglyLinkedList *singlyLinkedList);
 // Expected complexity:
 //
 //     O(n)
-void *singlyLinkedList_remove_at(SinglyLinkedList *singlyLinkedList,size_t index);
+void *singlyLinkedList_remove_at(SinglyLinkedList *singlyLinkedList,size_t index){
+    if (singlyLinkedList = NULL || singlyLinkedList->size == 0 || index >= singlyLinkedList->size){
+        return NULL;
+    }
+    void *data;
+    if (index == 0){
+        data = singlyLinkedList_remove_head(singlyLinkedList);
+    } else if (index == singlyLinkedList->size-1){
+        data = singlyLinkedList_remove_last(singlyLinkedList);
+    } else{
+        LinkedListNode *previousNode;
+        LinkedListNode *currentNode = singlyLinkedList->head;      
+        for (size_t currentNodeIndex = 0; currentNodeIndex < index; currentNodeIndex++){
+            previousNode = currentNode;
+            currentNode = currentNode->next;
+        }
+        data = currentNode->data;
+        previousNode->next = currentNode->next;
+        free(currentNode); // free the LinkedListNode
+    }
+    return data;
+}
 
 
 // Remove the first stored value logically equal to data.
@@ -487,7 +528,25 @@ void *singlyLinkedList_remove_at(SinglyLinkedList *singlyLinkedList,size_t index
 // Expected complexity:
 //
 //     O(n)
-void *singlyLinkedList_remove_value(SinglyLinkedList *singlyLinkedList,const void *data,SinglyLinkedListComparisonFunc singlyLinkedListComparisonFunc);
+void *singlyLinkedList_remove_value(SinglyLinkedList *singlyLinkedList,const void *data,SinglyLinkedListComparisonFunc singlyLinkedListComparisonFunc){
+    if (singlyLinkedList = NULL || singlyLinkedList->size == 0 || data == NULL){
+        return NULL;
+    }
+    void *data = NULL;
+    LinkedListNode *previousNode;
+    LinkedListNode *currentNode = singlyLinkedList->head;      
+    for (size_t currentNodeIndex = 0; currentNodeIndex < singlyLinkedList->size; currentNodeIndex++){
+        previousNode = currentNode;
+        currentNode = currentNode->next;
+        if (singlyLinkedListComparisonFunc(currentNode->data, data)){
+            data = currentNode->data;
+            previousNode->next = currentNode->next; 
+            free(currentNode); // free the LinkedListNode
+            break;
+        }
+    }
+    return data;
+}
 
 
 /* ============================================================
@@ -551,7 +610,26 @@ bool singlyLinkedList_is_empty(const SinglyLinkedList *singlyLinkedList){
 //
 // Pass NULL for borrowed, static, stack-allocated, or otherwise
 // externally managed data.
-void singlyLinkedList_clear(SinglyLinkedList *singlyLinkedList,void (*destroyData)(void *data));
+void singlyLinkedList_clear(SinglyLinkedList *singlyLinkedList,void (*destroyData)(void *data)){
+    if (singlyLinkedList = NULL || singlyLinkedList->size == 0){
+        return;
+    }
+    // clear the SinglyLinkedList
+    LinkedListNode *currentNode = singlyLinkedList->head;
+    LinkedListNode *removedNode = currentNode; // loop iterating pointer
+    while (currentNode != NULL){
+        if (destroyData != NULL){
+            destroyData(removedNode->data);
+        }
+        removedNode->data = NULL;
+        currentNode = currentNode->next;
+        free(removedNode); // free the underlying LinkedListNode
+        removedNode = currentNode;
+    }
+    singlyLinkedList->size = 0;
+    singlyLinkedList->head = NULL;
+    singlyLinkedList->tail = NULL;
+}
 
 
 // Destroy the entire singly linked list.
@@ -575,7 +653,25 @@ void singlyLinkedList_clear(SinglyLinkedList *singlyLinkedList,void (*destroyDat
 //
 // Pass NULL for borrowed, static, stack-allocated, or otherwise
 // externally managed data.
-void singlyLinkedList_destroy(SinglyLinkedList *singlyLinkedList,void (*destroyData)(void *data));
+void singlyLinkedList_destroy(SinglyLinkedList *singlyLinkedList,void (*destroyData)(void *data)){
+    if (singlyLinkedList = NULL || singlyLinkedList->size == 0){
+        return;
+    }
+    // clear the SinglyLinkedList
+    LinkedListNode *currentNode = singlyLinkedList->head;
+    LinkedListNode *removedNode = currentNode; // loop iterating pointer
+    while (currentNode != NULL){
+        if (destroyData != NULL){
+            destroyData(removedNode->data);
+        }
+        removedNode->data = NULL;
+        currentNode = currentNode->next;
+        free(removedNode); // free the underlying LinkedListNode
+        removedNode = currentNode;
+    }
+    // free / destroy the SinglyLinkedList structure
+    free(singlyLinkedList);
+}
 
 
 /* ============================================================
@@ -586,7 +682,7 @@ void singlyLinkedList_destroy(SinglyLinkedList *singlyLinkedList,void (*destroyD
 //
 // Conceptual rendering:
 //
-//     [A, B, C]
+//     [A -> B -> -> C]
 //
 // The caller supplies print_func to define how one stored value
 // should be printed.
