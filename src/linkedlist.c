@@ -76,6 +76,10 @@ bool singlyLinkedList_insert_front(SinglyLinkedList *singlyLinkedList,void *data
     if (node == NULL){
         return false;
     }
+    if (singlyLinkedList->size >= SIZE_MAX){
+        free(node);
+        return false; // check for overflows
+    }
     if (singlyLinkedList->size == 0){
         node->data = data;
         node->next = NULL;
@@ -125,6 +129,10 @@ bool singlyLinkedList_insert_back(SinglyLinkedList *singlyLinkedList,void *data)
     LinkedListNode *node = malloc(sizeof(*node));
     if (node == NULL){
         return false;
+    }
+    if (singlyLinkedList->size >= SIZE_MAX){
+        free(node);
+        return false; // check for overflows
     }
     if (singlyLinkedList->size == 0){
         node->data = data;
@@ -181,8 +189,10 @@ bool singlyLinkedList_insert_at(SinglyLinkedList *singlyLinkedList,void *data,si
     bool result = false;
     if (index == 0){
         result = singlyLinkedList_insert_front(singlyLinkedList, data);
+        //singlyLinkedList->size++; already done
     } else if (index == singlyLinkedList->size){
         result = singlyLinkedList_insert_back(singlyLinkedList, data);
+        //singlyLinkedList->size++; already done
     } else{
         // For a middle insertion, the list is traversed to the node
         // immediately preceding index.
@@ -196,13 +206,15 @@ bool singlyLinkedList_insert_at(SinglyLinkedList *singlyLinkedList,void *data,si
         if (node == NULL){
             return false;
         }
+        if (singlyLinkedList->size >= SIZE_MAX){
+            free(node);
+            return false; // check for overflows
+        }
         node->data = data;
         LinkedListNode *nextNodeToTheInsertedNode = currentNode->next;
         currentNode->next = node;
         node->next = nextNodeToTheInsertedNode;
         result = true;
-    }
-    if (result) {
         singlyLinkedList->size++;
     }
     return result;
@@ -214,8 +226,8 @@ bool singlyLinkedList_insert_at(SinglyLinkedList *singlyLinkedList,void *data,si
 // Example:
 //
 //     A -> B -> C -> NULL
-//
-// becomes:     A -> B -> C -> D -> E -> F -> G
+//       <-   <-
+// becomes:     
 //
 //     C -> B -> A -> NULL
 //
@@ -244,30 +256,25 @@ bool singlyLinkedList_reverse(SinglyLinkedList *singlyLinkedList){
         return false;
     }
     if (singlyLinkedList->size == 0){
-        return true;
         // no need to do anything as empty linked list
-    } else if (singlyLinkedList->size == 1){
         return true;
+    } else if (singlyLinkedList->size == 1){
         // no need to do anything as single-node linked list (already head == tail)
-    } else{ 
-        void **temp = malloc(sizeof(**temp) * singlyLinkedList->size);
-        LinkedListNode *currentNode = singlyLinkedList->head;
-        size_t currentIndex = 0; 
-        temp[currentIndex] = currentNode->data; 
+        return true;
+    }else{ 
+        LinkedListNode *oldHead = singlyLinkedList->head;
+        LinkedListNode *previousNode = singlyLinkedList->head;
+        LinkedListNode *currentNode = singlyLinkedList->head->next;
+        previousNode->next = NULL;
         while (currentNode != NULL){
-            currentNode = currentNode->next;
-            currentIndex++;
-            temp[currentIndex] = currentNode->data;
+            LinkedListNode *tempLoopVar = currentNode->next;
+            currentNode->next = previousNode;
+            previousNode = currentNode;
+            currentNode = tempLoopVar;
         } 
-        currentNode = singlyLinkedList->head;
-        while (currentIndex > 0){
-            currentNode->data = temp[currentIndex];
-            currentNode = currentNode->next;
-            currentIndex--;
-        }
-        // head is still head and tail is tail but they have the data's pointing to in the reverse order
-        // so the structure links are actually same but as the data pointers moved around now it is reversed
-        free(temp);
+        singlyLinkedList->head = previousNode; // old tail now head
+        singlyLinkedList->tail = oldHead;
+        return true;
     }
 }
 
@@ -379,12 +386,13 @@ bool singlyLinkedList_contains(const SinglyLinkedList *singlyLinkedList,const vo
 //
 //     O(1)
 void *singlyLinkedList_remove_first(SinglyLinkedList *singlyLinkedList){
-    if (singlyLinkedList = NULL || singlyLinkedList->size == 0){
+    if (singlyLinkedList == NULL || singlyLinkedList->size == 0){
         return NULL;
     }
     LinkedListNode *headNode = singlyLinkedList->head;
     if (singlyLinkedList->size > 1){
         singlyLinkedList->head = headNode->next;
+        singlyLinkedList->size -= 1;
     } else{
         singlyLinkedList->head = NULL;
         singlyLinkedList->tail = NULL;
@@ -426,20 +434,22 @@ void *singlyLinkedList_remove_first(SinglyLinkedList *singlyLinkedList){
 //
 //     O(n)
 void *singlyLinkedList_remove_last(SinglyLinkedList *singlyLinkedList){
-    if (singlyLinkedList = NULL || singlyLinkedList->size == 0){
+    if (singlyLinkedList == NULL || singlyLinkedList->size == 0){
         return NULL;
     }
     LinkedListNode *tailNode = singlyLinkedList->tail;
     void *data = tailNode->data;
     if (singlyLinkedList->size > 1){
         LinkedListNode *currentNode = singlyLinkedList->head;      
-        while (currentNode != NULL){
-            currentNode = currentNode->next;
+        while (currentNode->next != NULL){
             if (currentNode->next->next == NULL){
-                singlyLinkedList->tail = currentNode->next;
+                singlyLinkedList->tail = currentNode;
+                singlyLinkedList->tail->next = NULL;
                 break;
             }
+            currentNode = currentNode->next;
         }
+        singlyLinkedList->size -= 1;
     } else{
         singlyLinkedList->head = NULL;
         singlyLinkedList->tail = NULL;
@@ -482,12 +492,12 @@ void *singlyLinkedList_remove_last(SinglyLinkedList *singlyLinkedList){
 //
 //     O(n)
 void *singlyLinkedList_remove_at(SinglyLinkedList *singlyLinkedList,size_t index){
-    if (singlyLinkedList = NULL || singlyLinkedList->size == 0 || index >= singlyLinkedList->size){
+    if (singlyLinkedList == NULL || singlyLinkedList->size == 0 || index >= singlyLinkedList->size){
         return NULL;
     }
     void *data;
     if (index == 0){
-        data = singlyLinkedList_remove_head(singlyLinkedList);
+        data = singlyLinkedList_remove_first(singlyLinkedList);
     } else if (index == singlyLinkedList->size-1){
         data = singlyLinkedList_remove_last(singlyLinkedList);
     } else{
@@ -500,6 +510,7 @@ void *singlyLinkedList_remove_at(SinglyLinkedList *singlyLinkedList,size_t index
         data = currentNode->data;
         previousNode->next = currentNode->next;
         free(currentNode); // free the LinkedListNode
+        singlyLinkedList->size--;
     }
     return data;
 }
@@ -529,23 +540,38 @@ void *singlyLinkedList_remove_at(SinglyLinkedList *singlyLinkedList,size_t index
 //
 //     O(n)
 void *singlyLinkedList_remove_value(SinglyLinkedList *singlyLinkedList,const void *data,SinglyLinkedListComparisonFunc singlyLinkedListComparisonFunc){
-    if (singlyLinkedList = NULL || singlyLinkedList->size == 0 || data == NULL){
+    if (singlyLinkedList == NULL || singlyLinkedList->size == 0 || data == NULL || singlyLinkedListComparisonFunc == NULL){
         return NULL;
     }
-    void *data = NULL;
-    LinkedListNode *previousNode;
+    void *returnData = NULL;
+    LinkedListNode *previousNode = NULL;
     LinkedListNode *currentNode = singlyLinkedList->head;      
     for (size_t currentNodeIndex = 0; currentNodeIndex < singlyLinkedList->size; currentNodeIndex++){
-        previousNode = currentNode;
-        currentNode = currentNode->next;
         if (singlyLinkedListComparisonFunc(currentNode->data, data)){
-            data = currentNode->data;
-            previousNode->next = currentNode->next; 
+            if (currentNodeIndex  == 0){
+                // update head
+                singlyLinkedList->head = singlyLinkedList->head->next;
+                if (singlyLinkedList->size == 1){
+                    singlyLinkedList->head = NULL;
+                    singlyLinkedList->tail = NULL;
+                }
+            }
+            else if (currentNodeIndex == singlyLinkedList->size - 1){
+                // update tail 
+                singlyLinkedList->tail = previousNode;
+                singlyLinkedList->tail->next = NULL;
+            } else{
+                previousNode->next = currentNode->next;  
+            }
+            returnData = currentNode->data; 
             free(currentNode); // free the LinkedListNode
+            singlyLinkedList->size--;
             break;
         }
+        previousNode = currentNode;
+        currentNode = currentNode->next;
     }
-    return data;
+    return returnData;
 }
 
 
@@ -611,7 +637,7 @@ bool singlyLinkedList_is_empty(const SinglyLinkedList *singlyLinkedList){
 // Pass NULL for borrowed, static, stack-allocated, or otherwise
 // externally managed data.
 void singlyLinkedList_clear(SinglyLinkedList *singlyLinkedList,void (*destroyData)(void *data)){
-    if (singlyLinkedList = NULL || singlyLinkedList->size == 0){
+    if (singlyLinkedList == NULL || singlyLinkedList->size == 0){
         return;
     }
     // clear the SinglyLinkedList
@@ -654,7 +680,8 @@ void singlyLinkedList_clear(SinglyLinkedList *singlyLinkedList,void (*destroyDat
 // Pass NULL for borrowed, static, stack-allocated, or otherwise
 // externally managed data.
 void singlyLinkedList_destroy(SinglyLinkedList *singlyLinkedList,void (*destroyData)(void *data)){
-    if (singlyLinkedList = NULL || singlyLinkedList->size == 0){
+    if (singlyLinkedList == NULL || singlyLinkedList->size == 0){
+        free(singlyLinkedList);
         return;
     }
     // clear the SinglyLinkedList
@@ -682,7 +709,7 @@ void singlyLinkedList_destroy(SinglyLinkedList *singlyLinkedList,void (*destroyD
 //
 // Conceptual rendering:
 //
-//     [A -> B -> -> C]
+//     [Data: A-> Data: B-> Data: C]
 //
 // The caller supplies print_func to define how one stored value
 // should be printed.
@@ -702,7 +729,7 @@ void singlyLinkedList_print(const SinglyLinkedList *singlyLinkedList,void (*prin
     printf("[");
     LinkedListNode *currentNode = singlyLinkedList->head;
     for (size_t index = 0; index < singlyLinkedList->size; index++){
-        printf("Node: ");
+        printf("Data: ");
         print_func(currentNode->data);
         if(index + 1 < singlyLinkedList->size){
             printf("-> ");

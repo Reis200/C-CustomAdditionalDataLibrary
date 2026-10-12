@@ -107,7 +107,7 @@ typedef bool (*SinglyLinkedListComparisonFunc)(
 
 // Represents one node in the singly linked list.
 //
-// node:
+// data:
 //
 //     stores the caller-supplied data pointer.
 //
@@ -572,7 +572,7 @@ void singlyLinkedList_destroy(SinglyLinkedList *singlyLinkedList,void (*destroyD
 //
 // Conceptual rendering:
 //
-//     [A, B, C]
+//     [Data: A-> Data: B-> Data: C]
 //
 // The caller supplies print_func to define how one stored value
 // should be printed.
