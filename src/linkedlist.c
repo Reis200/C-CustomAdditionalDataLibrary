@@ -85,7 +85,7 @@ bool singlyLinkedList_insert_front(SinglyLinkedList *singlyLinkedList,void *data
         node->next = NULL;
         singlyLinkedList->head = node;
         singlyLinkedList->tail = node;
-    } else if (singlyLinkedList->size > 0){
+    } else{
         node->data = data;
         node->next = singlyLinkedList->head;
         singlyLinkedList->head = node;
