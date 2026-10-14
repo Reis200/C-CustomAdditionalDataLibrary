@@ -9,25 +9,20 @@
     Generic DoublyLinkedList
 
     A doubly linked list stores values in individually allocated
-    nodes connected in logical order through next pointers. Additional to the normal singly linked
-    list it holds previous pointer for reverse traversal + some other uses.
+    nodes connected in logical order through both next and previous
+    pointers.
 
-    Example: 
+    Each node may therefore be traversed in either direction:
 
-        head
-         |
-         v
-        [A] -> [B] -> [C] -> NULL
- Null <-    <-     <-   ^
-                        |
-                       tail
+        NULL <- [A] <-> [B] <-> [C] -> NULL
+                 ^               ^
+                 |               |
+                head            tail
 
 
     Representation invariants:
 
-    - size == 0 if and only if head == NULL.
-
-    - If size == 0:
+    - size == 0 if and only if:
           head == NULL
           tail == NULL
 
@@ -35,17 +30,36 @@
           head == tail
 
     - If size > 0:
-          head points to the first live node
-          tail points to the final live node
+          head != NULL
+          tail != NULL
+
+    - head points to the first live node.
+
+    - tail points to the final live node.
+
+    - The first node's previous pointer is NULL.
 
     - The final node's next pointer is NULL.
+
+    - For every live node with a non-NULL next pointer:
+
+          node->next->previous == node
+
+    - For every live node with a non-NULL previous pointer:
+
+          node->previous->next == node
 
     - Exactly size live nodes are reachable by repeatedly
       following next from head.
 
-    - No live node appears twice during traversal.
+    - Exactly size live nodes are reachable by repeatedly
+      following previous from tail.
 
-    - This representation contains no cycle.
+    - Forward traversal from head eventually reaches NULL
+      without revisiting a live node.
+
+    - Backward traversal from tail eventually reaches NULL
+      without revisiting a live node.
 
     - Every live node contains a non-NULL data pointer.
 
@@ -56,8 +70,8 @@
 
     - The pointed-to object itself is not copied.
 
-    - The list owns and manages its internal LinkedListNode
-      allocations.
+    - The list owns and manages its internal
+      DoublyLinkedListNode allocations.
 
     - Stored data ownership depends on the operation being used.
 
@@ -87,12 +101,13 @@
 //     true  -> value1 and value2 are logically equal
 //     false -> value1 and value2 are logically different
 //
-// The caller defines what equality means for the stored type.
+// The caller defines what logical equality means for the
+// stored type.
 //
 // The comparison function:
 //
 //     - must not modify either argument
-//     - should return consistent results for the same values
+//     - should behave consistently as an equality relation
 //
 // It is used only by operations that require logical-value
 // comparison, such as contains and remove_value.
@@ -114,11 +129,13 @@ typedef bool (*DoublyLinkedListComparisonFunc)(
 //
 // next:
 //
-//     refers to the subsequent DoublyLinkedListNode in logical order.
+//     points to the subsequent DoublyLinkedListNode
+//     in logical order.
 //
 // previous:
 //
-//     refers to the previous DoublyLinkedListNode in logical order.
+//     points to the preceding DoublyLinkedListNode
+//     in logical order.
 //
 // For the first node:
 //
@@ -127,7 +144,7 @@ typedef bool (*DoublyLinkedListComparisonFunc)(
 // For the final node:
 //
 //     next == NULL
-typedef struct DoublyLinkedListNode{
+typedef struct DoublyLinkedListNode {
     void *data;
     struct DoublyLinkedListNode *next;
     struct DoublyLinkedListNode *previous;
@@ -185,7 +202,11 @@ DoublyLinkedList *doublyLinkedList_create(void);
 //
 // Otherwise:
 //
-//     the new node becomes head and links to the previous head.
+//     the new node becomes head
+//     the new node's next pointer refers to the previous head
+//     the previous head's previous pointer refers to the new node
+//
+// The new head's previous pointer is NULL.
 //
 // The supplied data pointer is stored directly.
 // The pointed-to object is not copied.
@@ -216,11 +237,16 @@ bool doublyLinkedList_insert_front(DoublyLinkedList *doublyLinkedList,void *data
 //
 // Otherwise:
 //
-//     the current tail links to the new node and the
-//     new node becomes tail.
+//     the current tail's next pointer refers to the new node
+//     the new node's previous pointer refers to the old tail
+//     the new node becomes tail
 //
-// Because the list stores a tail pointer, no full traversal
-// is required.
+// The new tail's next pointer is NULL.
+//
+// The supplied data pointer is stored directly.
+// The pointed-to object is not copied.
+//
+// NULL data is invalid.
 //
 // On success:
 //
@@ -252,8 +278,13 @@ bool doublyLinkedList_insert_back(DoublyLinkedList *doublyLinkedList,void *data)
 //     index == size
 //         equivalent to inserting at the back.
 //
-// For a middle insertion, the list is traversed to the node
-// immediately preceding index.
+// For a middle insertion, the new node is linked between the
+// nodes immediately before and after the insertion position.
+//
+// Both next and previous relationships must remain consistent.
+//
+// An implementation may traverse from head or tail depending
+// on which endpoint is closer to the requested index.
 //
 // Existing nodes retain their original relative order.
 //
@@ -269,41 +300,8 @@ bool doublyLinkedList_insert_back(DoublyLinkedList *doublyLinkedList,void *data)
 //
 // Expected complexity:
 //
-//     O(n)
+//     O(n) worst case
 bool doublyLinkedList_insert_at(DoublyLinkedList *doublyLinkedList,void *data,size_t index);
-
-
-// Reverse the logical order of all nodes in place.
-//
-// Example:
-//
-//     A -> B -> C -> NULL
-//
-// becomes:
-//
-//     C -> B -> A -> NULL
-//
-// Stored data pointers are not copied or destroyed.
-//
-// head and tail are updated to represent the reversed list.
-//
-// size remains unchanged.
-//
-// Reversing an empty or single-node list is a valid no-op.
-//
-// Returns:
-//
-//     true  -> operation succeeded
-//     false -> doublyLinkedList is NULL
-//
-// Expected complexity:
-//
-//     O(n)
-//
-// Additional node storage:
-//
-//     O(1)
-bool doublyLinkedList_reverse(DoublyLinkedList *doublyLinkedList);
 
 
 /* ============================================================
@@ -354,6 +352,8 @@ const void *doublyLinkedList_get_last(const DoublyLinkedList *doublyLinkedList);
 // The supplied data pointer acts only as a lookup key and is
 // not stored, modified, removed, or destroyed.
 //
+// Search proceeds logically from head toward tail.
+//
 // Returns:
 //
 //     true  -> at least one matching value exists
@@ -385,7 +385,8 @@ bool doublyLinkedList_contains(const DoublyLinkedList *doublyLinkedList,const vo
 //
 // Otherwise:
 //
-//     head advances to the next live node.
+//     head advances to the next live node
+//     the new head's previous pointer becomes NULL
 //
 // Returns:
 //
@@ -413,8 +414,11 @@ void *doublyLinkedList_remove_first(DoublyLinkedList *doublyLinkedList);
 //
 // Otherwise:
 //
-//     tail moves to the previous node
-//     tail->next becomes NULL
+//     tail moves directly to the previous node
+//     the new tail's next pointer becomes NULL
+//
+// Because each node stores its previous node, the predecessor
+// of tail is available directly and no traversal is required.
 //
 // Returns:
 //
@@ -423,7 +427,7 @@ void *doublyLinkedList_remove_first(DoublyLinkedList *doublyLinkedList);
 //
 // Expected complexity:
 //
-//     O(n)
+//     O(1)
 void *doublyLinkedList_remove_last(DoublyLinkedList *doublyLinkedList);
 
 
@@ -441,10 +445,19 @@ void *doublyLinkedList_remove_last(DoublyLinkedList *doublyLinkedList);
 //     index == size - 1
 //         removes tail.
 //
-// The removed DoublyLinkedList is released internally.
+// For a middle removal, the surrounding nodes are linked
+// directly to one another:
+//
+//     removed->previous->next = removed->next
+//     removed->next->previous = removed->previous
+//
+// The removed DoublyLinkedListNode is released internally.
 //
 // The stored data pointer is returned and responsibility for
 // that pointer transfers to the caller.
+//
+// An implementation may traverse from head or tail depending
+// on which endpoint is closer to the requested index.
 //
 // On success:
 //
@@ -457,7 +470,7 @@ void *doublyLinkedList_remove_last(DoublyLinkedList *doublyLinkedList);
 //
 // Expected complexity:
 //
-//     O(n)
+//     O(n) worst case
 void *doublyLinkedList_remove_at(DoublyLinkedList *doublyLinkedList,size_t index);
 
 
@@ -465,16 +478,19 @@ void *doublyLinkedList_remove_at(DoublyLinkedList *doublyLinkedList,size_t index
 //
 // Equality is determined by doublyLinkedListComparisonFunc.
 //
-// If multiple equal values exist, only the first matching node
-// encountered from head is removed.
+// If multiple logically equal values exist, only the first
+// matching node encountered from head is removed.
 //
-// The removed DoublyLinkedList is released internally.
+// The removed node's neighbours are reconnected so that both
+// next and previous relationships remain valid.
 //
-// The exact stored data pointer belonging to that node is returned
-// and responsibility transfers to the caller.
+// The removed DoublyLinkedListNode is released internally.
 //
-// The supplied data argument acts only as the lookup key and is
-// not itself stored or destroyed by this operation.
+// The exact stored data pointer belonging to that node is
+// returned and responsibility transfers to the caller.
+//
+// The supplied data argument acts only as the lookup key and
+// is not itself stored, modified, or destroyed.
 //
 // Returns:
 //
@@ -579,7 +595,7 @@ void doublyLinkedList_destroy(DoublyLinkedList *doublyLinkedList,void (*destroyD
 //
 // Conceptual rendering:
 //
-//     [Node: A -> Data: B -> Data: C]
+//     [Data: A <-> Data: B <-> Data: C]
 //
 // The caller supplies print_func to define how one stored value
 // should be printed.
