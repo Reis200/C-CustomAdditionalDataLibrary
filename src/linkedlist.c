@@ -709,7 +709,7 @@ void singlyLinkedList_destroy(SinglyLinkedList *singlyLinkedList,void (*destroyD
 //
 // Conceptual rendering:
 //
-//     [Data: A-> Data: B-> Data: C]
+//     [Data: A -> Data: B -> Data: C]
 //
 // The caller supplies print_func to define how one stored value
 // should be printed.
@@ -732,7 +732,7 @@ void singlyLinkedList_print(const SinglyLinkedList *singlyLinkedList,void (*prin
         printf("Data: ");
         print_func(currentNode->data);
         if(index + 1 < singlyLinkedList->size){
-            printf("-> ");
+            printf(" -> ");
         }
         currentNode = currentNode->next;
     }

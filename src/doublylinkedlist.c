@@ -88,6 +88,7 @@ bool doublyLinkedList_insert_front(DoublyLinkedList *doublyLinkedList,void *data
         doublyLinkedList->tail = node;
     } else{
         node->next = doublyLinkedList->head;
+        doublyLinkedList->head->previous = node;
         doublyLinkedList->head = node;
     }
     doublyLinkedList->size++;
@@ -147,6 +148,7 @@ bool doublyLinkedList_insert_back(DoublyLinkedList *doublyLinkedList,void *data)
         doublyLinkedList->tail = node;
     } else{
         node->previous = doublyLinkedList->tail;
+        doublyLinkedList->tail->next = node;
         doublyLinkedList->tail = node;
     }
     doublyLinkedList->size++;
@@ -212,15 +214,20 @@ bool doublyLinkedList_insert_at(DoublyLinkedList *doublyLinkedList,void *data,si
             return false; // check for overflows
         } 
         node->data = data;
-        // For a middle insertion, the list is traversed to the node
-        // immediately preceding index.
-        DoublyLinkedListNode *currentNode = doublyLinkedList->head;
-        size_t currentIndex = 0;      
-        while (currentNode != NULL && currentIndex + 1 < index){
-            currentNode = currentNode->next;
-            currentIndex++;
+        DoublyLinkedListNode *currentNode;
+        if (index <= (doublyLinkedList->size / 2)){ // near the beginning
+            currentNode = doublyLinkedList->head;
+            for (size_t currentNodeIndex = 0; currentNodeIndex + 1 < index; currentNodeIndex++){
+                currentNode = currentNode->next;
+            }
+        } else { // near the end
+            currentNode = doublyLinkedList->tail;
+            for (size_t currentNodeIndex = doublyLinkedList->size-1; currentNodeIndex + 1 > index; currentNodeIndex--){
+                currentNode = currentNode->previous;                       
+            }
         }
         DoublyLinkedListNode *nextNodeToTheInsertedNode = currentNode->next;
+        nextNodeToTheInsertedNode->previous = node;
         currentNode->next = node;
         node->previous = currentNode;
         node->next = nextNodeToTheInsertedNode;
@@ -251,7 +258,7 @@ bool doublyLinkedList_insert_at(DoublyLinkedList *doublyLinkedList,void *data,si
 //
 //     O(1)
 const void *doublyLinkedList_get_first(const DoublyLinkedList *doublyLinkedList){
-    return (doublyLinkedList == NULL || doublyLinkedList->size == 0) ? NULL : doublyLinkedList->head;
+    return (doublyLinkedList == NULL || doublyLinkedList->size == 0) ? NULL : doublyLinkedList->head->data;
 }
 
 
@@ -272,7 +279,7 @@ const void *doublyLinkedList_get_first(const DoublyLinkedList *doublyLinkedList)
 //
 //     O(1)
 const void *doublyLinkedList_get_last(const DoublyLinkedList *doublyLinkedList){
-    return (doublyLinkedList == NULL || doublyLinkedList->size == 0) ? NULL : doublyLinkedList->tail;
+    return (doublyLinkedList == NULL || doublyLinkedList->size == 0) ? NULL : doublyLinkedList->tail->data;
 }
 
 
@@ -341,7 +348,24 @@ bool doublyLinkedList_contains(const DoublyLinkedList *doublyLinkedList,const vo
 // Expected complexity:
 //
 //     O(1)
-void *doublyLinkedList_remove_first(DoublyLinkedList *doublyLinkedList);
+void *doublyLinkedList_remove_first(DoublyLinkedList *doublyLinkedList){
+    if (doublyLinkedList == NULL || doublyLinkedList->size == 0){
+        return NULL;
+    }
+    DoublyLinkedListNode *headNode = doublyLinkedList->head;
+    void *data = headNode->data;
+    if (doublyLinkedList->size > 1){
+        doublyLinkedList->head = headNode->next;
+        doublyLinkedList->head->previous = NULL;
+        doublyLinkedList->size -= 1;
+    } else{
+        doublyLinkedList->head = NULL;
+        doublyLinkedList->tail = NULL;
+        doublyLinkedList->size = 0;
+    }
+    free(headNode); // free the DoublyLinkedListNode
+    return data;
+}
 
 
 // Remove the final node from the list.
@@ -373,7 +397,24 @@ void *doublyLinkedList_remove_first(DoublyLinkedList *doublyLinkedList);
 // Expected complexity:
 //
 //     O(1)
-void *doublyLinkedList_remove_last(DoublyLinkedList *doublyLinkedList);
+void *doublyLinkedList_remove_last(DoublyLinkedList *doublyLinkedList){
+    if (doublyLinkedList == NULL || doublyLinkedList->size == 0){
+        return NULL;
+    }
+    DoublyLinkedListNode *tailNode = doublyLinkedList->tail;
+    void *data = tailNode->data;
+    if (doublyLinkedList->size > 1){
+        doublyLinkedList->tail = tailNode->previous;
+        doublyLinkedList->tail->next = NULL;
+        doublyLinkedList->size -= 1;
+    } else{
+        doublyLinkedList->head = NULL;
+        doublyLinkedList->tail = NULL;
+        doublyLinkedList->size = 0;
+    }
+    free(tailNode); // free the DoublyLinkedListNode
+    return data;
+}
 
 
 // Remove the node at logical index.
@@ -416,7 +457,37 @@ void *doublyLinkedList_remove_last(DoublyLinkedList *doublyLinkedList);
 // Expected complexity:
 //
 //     O(n) worst case
-void *doublyLinkedList_remove_at(DoublyLinkedList *doublyLinkedList,size_t index);
+void *doublyLinkedList_remove_at(DoublyLinkedList *doublyLinkedList,size_t index){
+    if (doublyLinkedList == NULL || doublyLinkedList->size == 0 || index >= doublyLinkedList->size){
+        return NULL;
+    }
+    void *data;
+    if (index == 0){
+        data = doublyLinkedList_remove_first(doublyLinkedList);
+    } else if (index == doublyLinkedList->size-1){
+        data = doublyLinkedList_remove_last(doublyLinkedList);
+    } else{
+        DoublyLinkedListNode *currentNode;
+        if (index < (doublyLinkedList->size / 2)){ // near the beginning
+            currentNode = doublyLinkedList->head;
+            for (size_t currentNodeIndex = 0; currentNodeIndex < index; currentNodeIndex++){
+                currentNode = currentNode->next;
+            }
+        } else { // near the end
+            currentNode = doublyLinkedList->tail;
+            for (size_t currentNodeIndex = doublyLinkedList->size-1; currentNodeIndex > index; currentNodeIndex--){
+                currentNode = currentNode->previous;                       
+            }
+        }
+        
+        data = currentNode->data;
+        currentNode->previous->next = currentNode->next;
+        currentNode->next->previous = currentNode->previous;
+        free(currentNode); // free the DoublyLinkedListNode
+        doublyLinkedList->size--;
+    }
+    return data;
+}
 
 
 // Remove the first stored value logically equal to data.
@@ -445,7 +516,41 @@ void *doublyLinkedList_remove_at(DoublyLinkedList *doublyLinkedList,size_t index
 // Expected complexity:
 //
 //     O(n)
-void *doublyLinkedList_remove_value(DoublyLinkedList *doublyLinkedList,const void *data,DoublyLinkedListComparisonFunc doublyLinkedListComparisonFunc);
+void *doublyLinkedList_remove_value(DoublyLinkedList *doublyLinkedList,const void *data,DoublyLinkedListComparisonFunc doublyLinkedListComparisonFunc){
+    if (doublyLinkedList == NULL || doublyLinkedList->size == 0 || data == NULL || doublyLinkedListComparisonFunc == NULL){
+        return NULL;
+    }
+    void *returnData = NULL;
+    DoublyLinkedListNode *currentNode = doublyLinkedList->head;      
+    for (size_t currentNodeIndex = 0; currentNodeIndex < doublyLinkedList->size; currentNodeIndex++){
+        if (doublyLinkedListComparisonFunc(currentNode->data, data)){
+            if (currentNodeIndex  == 0){
+                // update head
+                if (doublyLinkedList->size == 1){
+                    doublyLinkedList->head = NULL;
+                    doublyLinkedList->tail = NULL;
+                } else{
+                    doublyLinkedList->head = doublyLinkedList->head->next;
+                    doublyLinkedList->head->previous = NULL;
+                }
+            }
+            else if (currentNodeIndex == doublyLinkedList->size - 1){
+                // update tail 
+                doublyLinkedList->tail = currentNode->previous;
+                doublyLinkedList->tail->next = NULL;
+            } else{
+                currentNode->previous->next = currentNode->next;  
+                currentNode->next->previous = currentNode->previous;
+            }
+            returnData = currentNode->data; 
+            free(currentNode); // free the DoublyLinkedListNode
+            doublyLinkedList->size--;
+            break;
+        }
+        currentNode = currentNode->next;
+    }
+    return returnData;
+}
 
 
 /* ============================================================
@@ -459,7 +564,9 @@ void *doublyLinkedList_remove_value(DoublyLinkedList *doublyLinkedList,const voi
 // Expected complexity:
 //
 //     O(1)
-size_t doublyLinkedList_size(const DoublyLinkedList *doublyLinkedList);
+size_t doublyLinkedList_size(const DoublyLinkedList *doublyLinkedList){
+    return (doublyLinkedList == NULL) ? 0 : doublyLinkedList->size;
+}
 
 
 // Return whether the list contains no live nodes.
@@ -476,7 +583,9 @@ size_t doublyLinkedList_size(const DoublyLinkedList *doublyLinkedList);
 // Expected complexity:
 //
 //     O(1)
-bool doublyLinkedList_is_empty(const DoublyLinkedList *doublyLinkedList);
+bool doublyLinkedList_is_empty(const DoublyLinkedList *doublyLinkedList){
+    return (doublyLinkedList == NULL || doublyLinkedList->size == 0 || doublyLinkedList->head == NULL || doublyLinkedList->tail == NULL) ? true : false;
+}
 
 
 /* ============================================================
@@ -505,7 +614,26 @@ bool doublyLinkedList_is_empty(const DoublyLinkedList *doublyLinkedList);
 //
 // Pass NULL for borrowed, static, stack-allocated, or otherwise
 // externally managed data.
-void doublyLinkedList_clear(DoublyLinkedList *doublyLinkedList,void (*destroyData)(void *data));
+void doublyLinkedList_clear(DoublyLinkedList *doublyLinkedList,void (*destroyData)(void *data)){
+    if (doublyLinkedList == NULL || doublyLinkedList->size == 0){
+        return;
+    }
+    // clear the DoublyLinkedList
+    DoublyLinkedListNode *currentNode = doublyLinkedList->head;
+    DoublyLinkedListNode *removedNode = currentNode; // loop iterating pointer
+    while (currentNode != NULL){
+        if (destroyData != NULL){
+            destroyData(removedNode->data);
+        }
+        removedNode->data = NULL;
+        currentNode = currentNode->next;
+        free(removedNode); // free the underlying DoublyLinkedListNode
+        removedNode = currentNode;
+    }
+    doublyLinkedList->size = 0;
+    doublyLinkedList->head = NULL;
+    doublyLinkedList->tail = NULL;
+}
 
 
 // Destroy the entire doubly linked list.
@@ -529,7 +657,26 @@ void doublyLinkedList_clear(DoublyLinkedList *doublyLinkedList,void (*destroyDat
 //
 // Pass NULL for borrowed, static, stack-allocated, or otherwise
 // externally managed data.
-void doublyLinkedList_destroy(DoublyLinkedList *doublyLinkedList,void (*destroyData)(void *data));
+void doublyLinkedList_destroy(DoublyLinkedList *doublyLinkedList,void (*destroyData)(void *data)){
+    if (doublyLinkedList == NULL || doublyLinkedList->size == 0){
+        free(doublyLinkedList);
+        return;
+    }
+    // clear the DoublyLinkedList
+    DoublyLinkedListNode *currentNode = doublyLinkedList->head;
+    DoublyLinkedListNode *removedNode = currentNode; // loop iterating pointer
+    while (currentNode != NULL){
+        if (destroyData != NULL){
+            destroyData(removedNode->data);
+        }
+        removedNode->data = NULL;
+        currentNode = currentNode->next;
+        free(removedNode); // free the underlying DoublyLinkedListNode
+        removedNode = currentNode;
+    }
+    // free / destroy the DoublyLinkedList structure
+    free(doublyLinkedList);
+}
 
 
 /* ============================================================
@@ -553,4 +700,20 @@ void doublyLinkedList_destroy(DoublyLinkedList *doublyLinkedList,void (*destroyD
 // Expected complexity:
 //
 //     O(n)
-void doublyLinkedList_print(const DoublyLinkedList *doublyLinkedList,void (*print_func)(const void *data));
+void doublyLinkedList_print(const DoublyLinkedList *doublyLinkedList,void (*print_func)(const void *data)){
+    if (doublyLinkedList == NULL || print_func == NULL){
+        return;
+    }
+    printf("[");
+    DoublyLinkedListNode *currentNode = doublyLinkedList->head;
+    for (size_t index = 0; index < doublyLinkedList->size; index++){
+        printf("Data: ");
+        print_func(currentNode->data);
+        if(index + 1 < doublyLinkedList->size){
+            printf(" <-> ");
+        }
+        currentNode = currentNode->next;
+    }
+    printf("]");
+    printf("\n");
+}
