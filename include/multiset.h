@@ -141,6 +141,11 @@
     If no clone function is supplied, the multiset behaves as a
     purely mathematical multiset: removing one of several equal
     occurrences changes only the multiplicity.
+
+    Thread safety:
+
+    - Thread-safety requirements follow the project-wide policy
+      documented in the library README.
 */
 
 
@@ -220,30 +225,8 @@ typedef void *(*MultisetCloneFunc)(const void *data);
    Representation
    ============================================================ */
 
-// Represents one distinct logical value and its multiplicity.
-typedef struct {
-   void *data;      // Canonical stored pointer for this value.
-   size_t count;    // Number of logical occurrences.
-} MultisetEntry;
-
-
 // The Multiset manages a dynamic array of distinct entries.
-typedef struct {
-   MultisetEntry *entries;
-
-   size_t distinctSize;
-   size_t totalSize;
-   size_t capacity;
-
-   MultisetComparisonFunc multisetCompareFunc;
-
-   // Optional.
-   //
-   // NULL means that non-final occurrence removal operates
-   // purely by changing multiplicity and cannot materialize
-   // an independently owned copy.
-   MultisetCloneFunc multisetCloneFunc;
-} Multiset;
+typedef struct Multiset Multiset; // opaque pointer to hide internals 
 
 
 /* ============================================================

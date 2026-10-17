@@ -4,6 +4,176 @@
 #include <stdio.h>
 #include <stdint.h>
 
+/*
+    Generic Multiset / Bag
+
+    A multiset represents logical values together with their
+    multiplicities.
+
+    If M is a multiset and x is a value:
+
+        M(x) = number of occurrences of x in M
+
+    Conceptually:
+
+        M : Values -> Natural Number Occurrences
+
+
+    Example:
+
+        { A, A, A, B, B, C }
+
+        distinctSize = 3
+        totalSize    = 6
+
+        multiplicity(A) = 3
+        multiplicity(B) = 2
+        multiplicity(C) = 1
+
+
+    Representation invariants:
+
+    - 0 <= distinctSize <= capacity
+
+    - totalSize >= distinctSize
+
+    - If distinctSize == 0:
+          totalSize == 0
+
+    - Every live entry occupies:
+          entries[0] through entries[distinctSize - 1]
+
+    - Every live entry satisfies:
+          entry.data  != NULL
+          entry.count > 0
+
+    - No two live entries compare equal according to the
+      multiset comparison function.
+
+    - totalSize is equal to the sum of all live entry counts.
+
+    - Slots from entries[distinctSize] through
+      entries[capacity - 1] are unused storage and are not
+      part of the abstract multiset.
+
+
+    Storage model:
+
+    - Exactly one canonical data pointer is stored for each
+      distinct logical value.
+
+    - Additional equal occurrences increase that entry's count.
+
+    - Additional occurrences do NOT create additional stored
+      objects or MultisetEntry objects.
+
+    Example:
+
+        Logical multiset:
+
+            { A, A, A, A }
+
+        Internal representation:
+
+            entry.data  -> one canonical A object
+            entry.count = 4
+
+    Therefore multiplicity represents logical occurrences,
+    not separately stored physical objects.
+   
+    Canonical value stability:
+
+    - While a value is stored as a canonical multiset entry, the
+      logical value used by MultisetComparisonFunc must remain stable.
+
+    - The caller must not mutate a stored object in a way that changes
+      how that object compares with values already stored in the
+      multiset.
+
+    Example:
+
+        Suppose two stored objects are initially distinct:
+
+            A -> id = 10
+            B -> id = 20
+
+        and MultisetComparisonFunc compares objects by id.
+
+        If the caller later mutates B so that:
+
+            B -> id = 10
+
+        then A and B now compare equal even though they occupy separate
+        MultisetEntry objects.
+
+        This violates the multiset representation invariant that no two
+        live entries compare equal.
+
+    - Mutating parts of a stored object that do not affect the equality
+      relation is permitted, provided doing so does not otherwise violate
+      the user's own object invariants.
+
+    - The multiset does not monitor external mutation of pointed-to data.
+      Maintaining logical equality stability while an object is stored is
+      therefore the caller's responsibility.
+
+    Optional cloning:
+
+    - A MultisetCloneFunc may optionally be supplied when the
+      multiset is constructed.
+
+    - The clone function does NOT cause every occurrence to be
+      stored separately.
+
+    - The multiset remains compressed as:
+
+          one canonical pointer + multiplicity count
+
+    - The clone function is used only when the implementation
+      must materialize an independently owned occurrence for
+      the caller.
+
+    In particular, multiset_remove_one() can use the clone
+    function when an occurrence is removed but other equal
+    occurrences must remain inside the multiset.
+
+    If no clone function is supplied, the multiset behaves as a
+    purely mathematical multiset: removing one of several equal
+    occurrences changes only the multiplicity.
+
+    Thread safety:
+
+    - Thread-safety requirements follow the project-wide policy
+      documented in the library README.
+*/
+
+/* ============================================================
+   Representation
+   ============================================================ */
+
+// Represents one distinct logical value and its multiplicity.
+typedef struct {
+   void *data;      // Canonical stored pointer for this value.
+   size_t count;    // Number of logical occurrences.
+} MultisetEntry;
+
+// The Multiset manages a dynamic array of distinct entries.
+typedef struct {
+   MultisetEntry *entries;
+
+   size_t distinctSize;
+   size_t totalSize;
+   size_t capacity;
+
+   MultisetComparisonFunc multisetCompareFunc;
+
+   // Optional.
+   //
+   // NULL means that non-final occurrence removal operates
+   // purely by changing multiplicity and cannot materialize
+   // an independently owned copy.
+   MultisetCloneFunc multisetCloneFunc;
+} Multiset;
 
 /* ============================================================
    Construction
