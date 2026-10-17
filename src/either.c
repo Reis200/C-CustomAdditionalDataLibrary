@@ -53,14 +53,14 @@
    Representation
    ============================================================ */
 
-typedef struct {
+struct Either{
     EitherState eitherState;
 
     union {
         void *left;
         void *right;
     } data;
-} Either;
+};
 
 /* ============================================================
    Construction

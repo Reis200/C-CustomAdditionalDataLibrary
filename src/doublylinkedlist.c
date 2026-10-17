@@ -135,11 +135,11 @@ typedef struct DoublyLinkedListNode {
 // size:
 //
 //     number of live nodes currently stored.
-typedef struct {
+struct DoublyLinkedList{
     DoublyLinkedListNode *head;
     DoublyLinkedListNode *tail;
     size_t size;
-} DoublyLinkedList;
+};
 
 /* ============================================================
    Construction

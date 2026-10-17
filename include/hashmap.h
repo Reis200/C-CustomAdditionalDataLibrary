@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 /*
     Generic HashMap
@@ -80,9 +81,15 @@ typedef bool (*HashMapKeyCompareFunc)(
    Representation
    ============================================================ */
 
+// One bucket / hashmap entry slot (one way to handle collisions)
+typedef struct {
+   uint64_t hash;
+   void *keys;
+   void *values;
+} HashMapEntry;
 
 typedef struct {
-    void **buckets;
+    HashMapEntry *entries;
     size_t capacity;
     size_t size;
 } HashMap;

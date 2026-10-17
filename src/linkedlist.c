@@ -109,11 +109,11 @@ typedef struct LinkedListNode{
 // size:
 //
 //     number of live nodes currently stored.
-typedef struct {
+struct SinglyLinkedList{
     LinkedListNode *head;
     LinkedListNode *tail;
     size_t size;
-} SinglyLinkedList;
+};
 
 
 /* ============================================================

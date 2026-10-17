@@ -26,11 +26,11 @@
       documented in the library README.
 */
 
-typedef struct {
+struct Stack{
     void **items;      // Backing array of stored pointers.
     size_t capacity;   // Number of pointer slots currently allocated.
     size_t size;       // Number of live elements currently stored.
-} Stack;
+};
 
 
 /* ============================================================

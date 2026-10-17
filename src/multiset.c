@@ -158,7 +158,7 @@ typedef struct {
 } MultisetEntry;
 
 // The Multiset manages a dynamic array of distinct entries.
-typedef struct {
+struct Multiset{
    MultisetEntry *entries;
 
    size_t distinctSize;
@@ -173,7 +173,7 @@ typedef struct {
    // purely by changing multiplicity and cannot materialize
    // an independently owned copy.
    MultisetCloneFunc multisetCloneFunc;
-} Multiset;
+};
 
 /* ============================================================
    Construction

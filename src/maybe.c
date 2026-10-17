@@ -33,10 +33,10 @@
    Representation
    ============================================================ */
 
-typedef struct {
+struct Maybe{
     MaybeState maybeState;
     void *data;
-} Maybe;
+};
 
 
 /* ============================================================
