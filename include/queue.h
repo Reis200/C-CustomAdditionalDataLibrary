@@ -32,14 +32,14 @@
 
         physicalIndex =
             (front_index + logicalIndex) % capacity
+    
+    Thread safety:
+
+    - Thread-safety requirements follow the project-wide policy
+      documented in the library README.
 */
 
-typedef struct {
-    void **items;          // Circular backing array of stored pointers.
-    size_t capacity;       // Number of pointer slots currently allocated.
-    size_t size;           // Number of live elements currently stored.
-    size_t front_index;    // Physical index of the logical front element.
-} Queue;
+typedef struct Queue Queue; // opaque pointer to hide internals
 
 
 /* ============================================================

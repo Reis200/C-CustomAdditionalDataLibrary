@@ -3,6 +3,47 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+/*
+    Generic Circular Queue
+
+    Design:
+    - items stores references to user-provided data.
+    - capacity defines the number of pointer slots currently allocated.
+    - size stores the number of live elements and provides O(1) size checks.
+    - front_index identifies the physical index of the logical front element.
+
+    Representation invariants:
+    - 0 <= size <= capacity.
+    - If capacity == 0, items may be NULL.
+    - If capacity > 0, items points to storage for at least
+      capacity elements of type void *.
+    - If size > 0, front_index is always in the range
+      [0, capacity - 1].
+    - If size == 0, there is no live front element even if
+      front_index contains the conventional value 0.
+    - Exactly size physical slots belong to the logical queue.
+    - Walking size positions from front_index with wrap-around
+      yields the elements in FIFO order.
+    - Unused slots are not part of the abstract queue and must
+      never be returned to the caller.
+
+    Physical index formula:
+
+        physicalIndex =
+            (front_index + logicalIndex) % capacity
+     
+    Thread safety:
+
+     - Thread-safety requirements follow the project-wide policy
+      documented in the library README.
+*/
+
+typedef struct {
+    void **items;          // Circular backing array of stored pointers.
+    size_t capacity;       // Number of pointer slots currently allocated.
+    size_t size;           // Number of live elements currently stored.
+    size_t front_index;    // Physical index of the logical front element.
+} Queue;
 
 /* ============================================================
    Construction

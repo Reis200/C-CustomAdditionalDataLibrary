@@ -19,6 +19,11 @@
       are unused storage and are not part of the abstract stack.
     - Logical stack order from bottom to top is identical to
       physical live-array order.
+    
+    Thread safety:
+
+    - Thread-safety requirements follow the project-wide policy
+      documented in the library README.
 */
 
 typedef struct {
