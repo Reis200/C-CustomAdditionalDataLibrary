@@ -4,6 +4,117 @@
 #include <stdio.h>
 #include <stdint.h>
 
+/*
+    Generic LinkedList / SinglyLinkedList
+
+    A singly linked list stores values in individually allocated
+    nodes connected in logical order through next pointers.
+
+    Example:
+
+        head
+         |
+         v
+        [A] -> [B] -> [C] -> NULL
+                         ^
+                         |
+                        tail
+
+
+    Representation invariants:
+
+    - size == 0 if and only if head == NULL.
+
+    - If size == 0:
+          head == NULL
+          tail == NULL
+
+    - If size == 1:
+          head == tail
+
+    - If size > 0:
+          head points to the first live node
+          tail points to the final live node
+
+    - The final node's next pointer is NULL.
+
+    - Exactly size live nodes are reachable by repeatedly
+      following next from head.
+
+    - No live node appears twice during traversal.
+
+    - This representation contains no cycle.
+
+    - Every live node contains a non-NULL data pointer.
+
+
+    Storage model:
+
+    - The list stores the supplied data pointer directly.
+
+    - The pointed-to object itself is not copied.
+
+    - The list owns and manages its internal LinkedListNode
+      allocations.
+
+    - Stored data ownership depends on the operation being used.
+
+    - Duplicate logical values are permitted.
+
+    - Access operations return borrowed pointers.
+
+    - Removal operations return the stored pointer and transfer
+      responsibility for that pointer to the caller.
+
+
+    Thread safety:
+
+    - Thread-safety requirements follow the project-wide policy
+      documented in the library README.
+*/
+
+/* ============================================================
+   Representation
+   ============================================================ */
+
+// Represents one node in the singly linked list.
+//
+// data:
+//
+//     stores the caller-supplied data pointer.
+//
+// next:
+//
+//     refers to the subsequent LinkedListNode in logical order.
+//
+// For the final node:
+//
+//     next == NULL
+typedef struct LinkedListNode{
+    void *data;
+    struct LinkedListNode *next;
+} LinkedListNode;
+
+
+// Represents the complete singly linked list.
+//
+// head:
+//
+//     points to the first live node.
+//
+// tail:
+//
+//     points to the final live node.
+//
+// size:
+//
+//     number of live nodes currently stored.
+typedef struct {
+    LinkedListNode *head;
+    LinkedListNode *tail;
+    size_t size;
+} SinglyLinkedList;
+
 
 /* ============================================================
    Construction

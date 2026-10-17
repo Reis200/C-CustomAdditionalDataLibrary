@@ -105,43 +105,7 @@ typedef bool (*SinglyLinkedListComparisonFunc)(
    Representation
    ============================================================ */
 
-// Represents one node in the singly linked list.
-//
-// data:
-//
-//     stores the caller-supplied data pointer.
-//
-// next:
-//
-//     refers to the subsequent LinkedListNode in logical order.
-//
-// For the final node:
-//
-//     next == NULL
-typedef struct LinkedListNode{
-    void *data;
-    struct LinkedListNode *next;
-} LinkedListNode;
-
-
-// Represents the complete singly linked list.
-//
-// head:
-//
-//     points to the first live node.
-//
-// tail:
-//
-//     points to the final live node.
-//
-// size:
-//
-//     number of live nodes currently stored.
-typedef struct {
-    LinkedListNode *head;
-    LinkedListNode *tail;
-    size_t size;
-} SinglyLinkedList;
+typedef struct SinglyLinkedList SinglyLinkedList; // opaque pointer to hide internals
 
 
 /* ============================================================
