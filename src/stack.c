@@ -3,6 +3,30 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+/*
+    Generic Stack
+
+    Representation invariants:
+    - 0 <= size <= capacity.
+    - If capacity == 0, items may be NULL.
+    - If capacity > 0, items points to storage for at least
+      capacity elements of type void *.
+    - Live elements occupy the contiguous range:
+          items[0] through items[size - 1]
+    - If size > 0, the logical top is:
+          items[size - 1]
+    - Slots from items[size] through items[capacity - 1]
+      are unused storage and are not part of the abstract stack.
+    - Logical stack order from bottom to top is identical to
+      physical live-array order.
+*/
+
+typedef struct {
+    void **items;      // Backing array of stored pointers.
+    size_t capacity;   // Number of pointer slots currently allocated.
+    size_t size;       // Number of live elements currently stored.
+} Stack;
+
 
 /* ============================================================
    Construction

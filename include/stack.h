@@ -22,11 +22,7 @@
       physical live-array order.
 */
 
-typedef struct {
-    void **items;      // Backing array of stored pointers.
-    size_t capacity;   // Number of pointer slots currently allocated.
-    size_t size;       // Number of live elements currently stored.
-} Stack;
+typedef struct Stack Stack; // opaque pointer to hide internals
 
 
 /* ============================================================

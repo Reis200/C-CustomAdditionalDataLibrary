@@ -30,6 +30,14 @@
     - The load threshold is consistent with capacity and the selected maximum load factor.
     - The structure contains every entry exactly once in the location implied by its hash and collision strategy.
 
+        Separate-chaining-specific invariants
+    - buckets points to an array of capacity bucket heads.
+    - Every live node is reachable from exactly one bucket head.
+    - A node in bucket i has bucket_index(node->hash, capacity) == i.
+    - No chain contains a cycle.
+    - The total number of nodes across every chain equals size.
+    - Within a chain, equal hashes still require key equality before treating entries as the same key.
+   
     Thread safety:
 
     - Thread-safety requirements follow the project-wide policy
@@ -74,8 +82,7 @@ typedef bool (*HashMapKeyCompareFunc)(
 
 
 typedef struct {
-    void *keys;
-    void *values;
+    void **buckets;
     size_t capacity;
     size_t size;
 } HashMap;
