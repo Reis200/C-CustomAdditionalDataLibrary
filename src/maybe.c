@@ -3,6 +3,37 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+/*
+    Generic Maybe Type
+
+    A Maybe represents an optional value.
+
+    States:
+    - MAYBE_INVALID:
+          Used as a query result when the Maybe pointer itself is NULL.
+          This should not normally be stored inside a valid Maybe object.
+
+    - NOTHING:
+          Represents a valid Maybe containing no value.
+
+    - JUST:
+          Represents a valid Maybe containing a value.
+
+    Representation invariants:
+    - NOTHING <=> data == NULL
+    - JUST    <=> data != NULL
+
+    Thread safety:
+
+    - Thread-safety requirements follow the project-wide policy
+      documented in the library README.
+*/
+
+typedef struct {
+    MaybeState maybeState;
+    void *data;
+} Maybe;
+
 
 /* ============================================================
    Construction

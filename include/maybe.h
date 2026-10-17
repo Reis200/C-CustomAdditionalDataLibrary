@@ -22,6 +22,11 @@
     Representation invariants:
     - NOTHING <=> data == NULL
     - JUST    <=> data != NULL
+
+    Thread safety:
+
+    - Thread-safety requirements follow the project-wide policy
+      documented in the library README.
 */
 
 typedef enum {
@@ -31,10 +36,7 @@ typedef enum {
 } MaybeState;
 
 
-typedef struct {
-    MaybeState maybeState;
-    void *data;
-} Maybe;
+typedef struct Maybe Maybe; // opaque pointer to hide internals
 
 
 /* ============================================================
