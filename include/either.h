@@ -42,7 +42,16 @@
     - EITHER_INVALID:
           query result for an invalid or NULL Either pointer;
           not a normal stored state.
+
+    Thread safety:
+
+    - Thread-safety requirements follow the project-wide policy
+      documented in the library README.
 */
+
+/* ============================================================
+   Representation
+   ============================================================ */
 
 typedef enum {
     EITHER_INVALID,
@@ -52,14 +61,7 @@ typedef enum {
 } EitherState;
 
 
-typedef struct {
-    EitherState eitherState;
-
-    union {
-        void *left;
-        void *right;
-    } data;
-} Either;
+typedef struct Either Either; // opaque pointer to hide internals
 
 
 /* ============================================================

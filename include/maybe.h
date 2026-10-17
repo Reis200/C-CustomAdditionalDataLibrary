@@ -29,6 +29,10 @@
       documented in the library README.
 */
 
+/* ============================================================
+   Representation
+   ============================================================ */
+
 typedef enum {
     MAYBE_INVALID,
     NOTHING,

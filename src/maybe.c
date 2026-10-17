@@ -29,6 +29,10 @@
       documented in the library README.
 */
 
+/* ============================================================
+   Representation
+   ============================================================ */
+
 typedef struct {
     MaybeState maybeState;
     void *data;

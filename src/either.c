@@ -3,6 +3,64 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+/*
+    Generic Either Type
+
+    An Either represents a value with two possible alternatives.
+
+    By convention:
+    - LEFT  is commonly used for an error or alternative value.
+    - RIGHT is commonly used for a successful or expected value.
+
+    States:
+    - EITHER_INVALID:
+          Used as a query result when the Either pointer itself is NULL.
+          This should not normally be stored inside a valid Either object.
+
+    - NONE:
+          Represents a valid Either containing no active value.
+
+    - LEFT:
+          Represents a valid Either containing a value in data.left.
+
+    - RIGHT:
+          Represents a valid Either containing a value in data.right.
+
+    Representation invariants:
+    - LEFT:
+          active union member is data.left
+          data.left != NULL
+
+    - RIGHT:
+          active union member is data.right
+          data.right != NULL
+
+    - NONE:
+          no active value
+          union storage is NULL
+
+    - EITHER_INVALID:
+          query result for an invalid or NULL Either pointer;
+          not a normal stored state.
+
+    Thread safety:
+
+    - Thread-safety requirements follow the project-wide policy
+      documented in the library README.
+*/
+
+/* ============================================================
+   Representation
+   ============================================================ */
+
+typedef struct {
+    EitherState eitherState;
+
+    union {
+        void *left;
+        void *right;
+    } data;
+} Either;
 
 /* ============================================================
    Construction
