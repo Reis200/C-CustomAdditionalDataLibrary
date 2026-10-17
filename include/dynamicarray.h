@@ -17,12 +17,18 @@
     - Slots from items[size] through items[capacity - 1]
       are unused storage and are not part of the logical array.
     - Logical element order is identical to physical array order.
+
+   Thread safety:
+
+    - Thread-safety requirements follow the project-wide policy
+      documented in the library README.
 */
-typedef struct {
-    void **items;      // Backing array of stored pointers.
-    size_t capacity;   // Number of pointer slots currently allocated.
-    size_t size;       // Number of live elements currently stored.
-} DynamicArray;
+
+/* ============================================================
+   Representation
+   ============================================================ */
+
+typedef struct DynamicArray DynamicArray; // opaque pointer to hide internals
 
 
 /* ============================================================
