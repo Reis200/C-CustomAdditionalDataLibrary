@@ -121,54 +121,7 @@ typedef bool (*DoublyLinkedListComparisonFunc)(
    Representation
    ============================================================ */
 
-// Represents one node in the doubly linked list.
-//
-// data:
-//
-//     stores the caller-supplied data pointer.
-//
-// next:
-//
-//     points to the subsequent DoublyLinkedListNode
-//     in logical order.
-//
-// previous:
-//
-//     points to the preceding DoublyLinkedListNode
-//     in logical order.
-//
-// For the first node:
-//
-//     previous == NULL
-//
-// For the final node:
-//
-//     next == NULL
-typedef struct DoublyLinkedListNode {
-    void *data;
-    struct DoublyLinkedListNode *next;
-    struct DoublyLinkedListNode *previous;
-} DoublyLinkedListNode;
-
-
-// Represents the complete doubly linked list.
-//
-// head:
-//
-//     points to the first live node.
-//
-// tail:
-//
-//     points to the final live node.
-//
-// size:
-//
-//     number of live nodes currently stored.
-typedef struct {
-    DoublyLinkedListNode *head;
-    DoublyLinkedListNode *tail;
-    size_t size;
-} DoublyLinkedList;
+typedef struct DoublyLinkedList DoublyLinkedList; // opaque pointer to hide internals
 
 
 /* ============================================================

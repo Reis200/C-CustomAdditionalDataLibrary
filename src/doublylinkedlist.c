@@ -4,6 +4,143 @@
 #include <stdio.h>
 #include <stdint.h>
 
+/*
+    Generic DoublyLinkedList
+
+    A doubly linked list stores values in individually allocated
+    nodes connected in logical order through both next and previous
+    pointers.
+
+    Each node may therefore be traversed in either direction:
+
+        NULL <- [A] <-> [B] <-> [C] -> NULL
+                 ^               ^
+                 |               |
+                head            tail
+
+
+    Representation invariants:
+
+    - size == 0 if and only if:
+          head == NULL
+          tail == NULL
+
+    - If size == 1:
+          head == tail
+
+    - If size > 0:
+          head != NULL
+          tail != NULL
+
+    - head points to the first live node.
+
+    - tail points to the final live node.
+
+    - The first node's previous pointer is NULL.
+
+    - The final node's next pointer is NULL.
+
+    - For every live node with a non-NULL next pointer:
+
+          node->next->previous == node
+
+    - For every live node with a non-NULL previous pointer:
+
+          node->previous->next == node
+
+    - Exactly size live nodes are reachable by repeatedly
+      following next from head.
+
+    - Exactly size live nodes are reachable by repeatedly
+      following previous from tail.
+
+    - Forward traversal from head eventually reaches NULL
+      without revisiting a live node.
+
+    - Backward traversal from tail eventually reaches NULL
+      without revisiting a live node.
+
+    - Every live node contains a non-NULL data pointer.
+
+
+    Storage model:
+
+    - The list stores the supplied data pointer directly.
+
+    - The pointed-to object itself is not copied.
+
+    - The list owns and manages its internal
+      DoublyLinkedListNode allocations.
+
+    - Stored data ownership depends on the operation being used.
+
+    - Duplicate logical values are permitted.
+
+    - Access operations return borrowed pointers.
+
+    - Removal operations return the stored pointer and transfer
+      responsibility for that pointer to the caller.
+
+
+    Thread safety:
+
+    - Thread-safety requirements follow the project-wide policy
+      documented in the library README.
+*/
+
+/* ============================================================
+   Representation
+   ============================================================ */
+
+// Represents one node in the doubly linked list.
+//
+// data:
+//
+//     stores the caller-supplied data pointer.
+//
+// next:
+//
+//     points to the subsequent DoublyLinkedListNode
+//     in logical order.
+//
+// previous:
+//
+//     points to the preceding DoublyLinkedListNode
+//     in logical order.
+//
+// For the first node:
+//
+//     previous == NULL
+//
+// For the final node:
+//
+//     next == NULL
+typedef struct DoublyLinkedListNode {
+    void *data;
+    struct DoublyLinkedListNode *next;
+    struct DoublyLinkedListNode *previous;
+} DoublyLinkedListNode;
+
+
+// Represents the complete doubly linked list.
+//
+// head:
+//
+//     points to the first live node.
+//
+// tail:
+//
+//     points to the final live node.
+//
+// size:
+//
+//     number of live nodes currently stored.
+typedef struct {
+    DoublyLinkedListNode *head;
+    DoublyLinkedListNode *tail;
+    size_t size;
+} DoublyLinkedList;
+
 /* ============================================================
    Construction
    ============================================================ */
