@@ -114,7 +114,7 @@ static void test_stack_peek_does_not_modify_stack(void){
 
     const char *result = stack_peek(stack);
 
-    if (strcmp(result,"c is good") == 0 && stack->size == 3){
+    if (strcmp(result,"c is good") == 0 && stack_size(stack) == 3){
         print_test_result("test_stack_peek_does_not_modify_stack",true);
     } else{
         print_test_result("test_stack_peek_does_not_modify_stack",false);
@@ -136,7 +136,7 @@ static void test_stack_pop_succeeds_when_intended(void){
 
     char *result = stack_pop(stack);
 
-    if (strcmp(result,"c is good") == 0 && stack->size == 2){
+    if (strcmp(result,"c is good") == 0 && stack_size(stack) == 2){
         print_test_result("test_stack_pop_succeeds_when_intended",true);
     } else{
         print_test_result("test_stack_pop_succeeds_when_intended",false);
@@ -255,8 +255,8 @@ static void test_stack_reserve_functions_intended(void){
     print_test_result(
         "test_stack_reserve_functions_intended",
         stack != NULL &&
-        stack->size == 0 &&
-        stack->capacity == 5
+        stack_size(stack) == 0 &&
+        stack_capacity(stack) == 5
     );
 
     stack_destroy(stack, NULL);
@@ -294,7 +294,7 @@ static void test_stack_clear_keeps_stack_capacity(void){
     stack_push(stack,c);
 
     stack_clear(stack,test_destroy_int);
-    if (stack->capacity == 5){
+    if (stack_capacity(stack) == 5){
         print_test_result("test_stack_clear_keeps_stack_capacity",true);
     } else{
         print_test_result("test_stack_clear_keeps_stack_capacity",false);
@@ -313,7 +313,7 @@ static void test_stack_clear_handles_non_freeable_memory(void){ // stack pointer
     stack_push(stack,c);
 
     stack_clear(stack,NULL); // as string literals stack only
-    if (stack->capacity == 5){
+    if (stack_capacity(stack) == 5){
         print_test_result("test_stack_clear_handles_non_freeable_memory",true);
     } else{
         print_test_result("test_stack_clear_handles_non_freeable_memory",false);

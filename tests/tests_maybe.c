@@ -20,7 +20,7 @@ static void test_destroy_string(void *data){
 static void tests_maybe_create(void){
     Maybe *maybe = maybe_create();
 
-    print_test_result("tests_maybe_create", maybe != NULL && maybe->maybeState == NOTHING && maybe->data == NULL);
+    print_test_result("tests_maybe_create", maybe != NULL && maybe_getState(maybe) == NOTHING && maybe_getData(maybe) == NULL);
 
     maybe_destroy(maybe, NULL);
     // reset destroy count for future use
@@ -50,14 +50,14 @@ static void tests_maybe_clear(void){
     Maybe *maybe = maybe_create();
 
     maybe_clear(maybe, test_destroy_int);
-    print_test_result("tests_maybe_clear #1", destroy_count == 0 && maybe != NULL && maybe->data == NULL && maybe->maybeState == NOTHING);
+    print_test_result("tests_maybe_clear #1", destroy_count == 0 && maybe != NULL && maybe_getData(maybe) == NULL && maybe_getState(maybe) == NOTHING);
 
     Maybe *maybe1 = maybe_create();
     char *str1 = malloc(sizeof(char) * 5);
     strcpy(str1, "test");
     maybe_setData(maybe1, str1, NULL);
     maybe_clear(maybe1, test_destroy_string);
-    print_test_result("tests_maybe_clear #2", destroy_count == 1 && maybe1 != NULL && maybe1->data == NULL && maybe1->maybeState == NOTHING);
+    print_test_result("tests_maybe_clear #2", destroy_count == 1 && maybe1 != NULL && maybe_getData(maybe) == NULL && maybe_getState(maybe) == NOTHING);
     
 
     maybe_destroy(maybe, NULL);
@@ -146,7 +146,7 @@ static void tests_maybe_setData(void){
 
     bool result2 = maybe_setData(maybe1, NULL, NULL);
 
-    print_test_result("tests_maybe_setData #3", result2 && maybe1->maybeState == NOTHING);
+    print_test_result("tests_maybe_setData #3", result2 && maybe_getState(maybe1) == NOTHING);
     maybe_destroy(maybe1, NULL);
 
 

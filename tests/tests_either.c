@@ -19,21 +19,21 @@ static void tests_either_create(void){
     int data = 32;
     Either *either = either_create(RIGHT, &data);
 
-    print_test_result("tests_either_create #1", either != NULL && either->eitherState == RIGHT && either->data.right == &data && *(int *)either->data.right == data);
+    print_test_result("tests_either_create #1", either != NULL && either_getState(either) == RIGHT && either_getData(either) == &data && *(int *)either_getData(either) == data);
     either_destroy(either, NULL); // as int *data made in stack
 
     char *data1 = "test :D";
     Either *either1 = either_create(NONE, data1);
-    print_test_result("tests_either_create #2", either1 != NULL && either1->eitherState == LEFT && either1->data.left == data1 && strcmp(either1->data.left, data1) == 0);
+    print_test_result("tests_either_create #2", either1 != NULL && either_getState(either1) == LEFT && either_getData(either1) == data1 && strcmp(either_getData(either1), data1) == 0);
     either_destroy(either1, NULL); // as char *data1 is non-freeable
 
     Either *either2 = either_create(NONE, NULL);
-    print_test_result("tests_either_create #4", either2 != NULL && either2->eitherState == NONE && either2->data.left == NULL);
+    print_test_result("tests_either_create #4", either2 != NULL && either_getState(either2) == NONE && either_getData(either2) == NULL);
     either_destroy(either2, NULL);
 
     char *data2 = "test :D";
     Either *either3 = either_create(EITHER_INVALID, data2);
-    print_test_result("tests_either_create #3", either3 != NULL && either3->eitherState == LEFT && either3->data.left == data2 && strcmp(either3->data.left, data2) == 0);
+    print_test_result("tests_either_create #3", either3 != NULL && either_getState(either3) == LEFT && either_getData(either3) == data2 && strcmp(either_getData(either3), data2) == 0);
     either_destroy(either3, NULL); // as char *data2 is is non-freeable
 
     // reset destroy count for future use
@@ -62,13 +62,13 @@ static void tests_either_clear(void){
     Either *either = either_create(NONE, NULL);
 
     either_clear(either, test_destroy_int);
-    print_test_result("tests_either_clear #1", destroy_count == 0 && either != NULL && either->data.left == NULL && either->eitherState == NONE);
+    print_test_result("tests_either_clear #1", destroy_count == 0 && either != NULL && either_getData(either) == NULL && either_getState(either) == NONE);
 
     char *str1 = malloc(sizeof(char) * 5);
     strcpy(str1, "test");
     Either *either1 = either_create(RIGHT,str1);
     either_clear(either1, test_destroy_string);
-    print_test_result("tests_either_clear #2", destroy_count == 1 && either1 != NULL && either1->data.right == NULL && either1->eitherState == NONE);
+    print_test_result("tests_either_clear #2", destroy_count == 1 && either1 != NULL && either_getData(either1) == NULL && either_getState(either1) == NONE);
     
 
     either_destroy(either, NULL);
@@ -159,13 +159,13 @@ static void tests_either_setData(void){
     int *n = malloc(sizeof(int));
     *n = 5;
     bool result = either_setData(either, RIGHT, n, NULL);
-    print_test_result("tests_either_setData #1", result && either->eitherState == RIGHT && either->data.right == n && *(int *)either->data.right == *n);
+    print_test_result("tests_either_setData #1", result && either_getState(either) == RIGHT && either_getData(either) == n && *(int *)either_getData(either) == *n);
     
 
     int *n1 = malloc(sizeof(int));
     *n1 = 500;
     bool result1 = either_setData(either, LEFT, n1, test_destroy_int);
-    print_test_result("tests_either_setData #2", destroy_count == 1 && result1 && either->eitherState == LEFT && either->data.left == n1 && *(int *)either->data.left == *n1);
+    print_test_result("tests_either_setData #2", destroy_count == 1 && result1 && either_getState(either) == LEFT && either_getData(either) == n1 && *(int *)either_getData(either) == *n1);
 
     either_destroy(either, test_destroy_int);
 
@@ -174,7 +174,7 @@ static void tests_either_setData(void){
 
     bool result2 = either_setData(either1, NONE, NULL, NULL);
 
-    print_test_result("tests_either_setData #3", result2 && either1->eitherState == NONE && either1->data.left == NULL);
+    print_test_result("tests_either_setData #3", result2 && either_getState(either1) == NONE && either_getData(either1) == NULL);
     either_destroy(either1, NULL);
 
 
