@@ -76,24 +76,28 @@ typedef bool (*HashMapKeyCompareFunc)(
     const void *key2
 );
 
+/* ============================================================
+   Helpers
+   ============================================================ */
+
+// Used for hashing built-in common types...
+// The caller can wrap these helpers in the HashMapHashFunc signature.
+uint64_t hash_bytes(void *data, size_t length, int seed);
+
+uint64_t hash_cstring(char *str, int seed); 
+
+uint64_t hash_int(int *integer, int seed); 
+
+uint64_t hash_uint64(uint64_t value);
+
+uint64_t hash_pointer_identity(void *ptr);
+
 
 /* ============================================================
    Representation
    ============================================================ */
 
-// One bucket / hashmap entry slot (one way to handle collisions)
-typedef struct {
-   uint64_t hash;
-   void *keys;
-   void *values;
-} HashMapEntry;
-
-typedef struct {
-    HashMapEntry *entries;
-    size_t capacity;
-    size_t size;
-} HashMap;
-
+typedef struct HashMap HashMap; // opaque pointer to hide the internals
 
 /* ============================================================
    Construction
@@ -109,7 +113,8 @@ HashMap *hashmap_create(void);
 
 // Updates the HashMap with the specified key-value pairs
 // if key value pair already exists only changes the value does not make a duplicate key
-bool hashmap_set(HashMap *doublyLinkedList, void *key, void *data);
+// -> Keep old key, replace value
+bool hashmap_put(HashMap *doublyLinkedList, void *key, void *data);
 
 
 
