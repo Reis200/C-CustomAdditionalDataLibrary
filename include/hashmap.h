@@ -104,7 +104,20 @@ typedef struct HashMap HashMap; // opaque pointer to hide the internals
    ============================================================ */
 
 // Construct a valid empty HashMap.
-HashMap *hashmap_create(void);
+//
+// Initial state:
+//
+//    HashMapEntry **entries = NULL;
+//    size_t capacity = 0;
+//    size_t size = 0;
+//    HashMapHashFunc hashFunc = hashFunc; !! are obligatory
+//    HashMapKeyCompareFunc compareFunc = compareFunc; !! are obligatory
+//
+// Returns:
+//
+//     non-NULL -> construction succeeded !! also validated correctly
+//     NULL     -> allocation failed
+HashMap *hashmap_create(HashMapHashFunc hashFunc, HashMapKeyCompareFunc compareFunc);
 
 
 /* ============================================================
@@ -114,7 +127,7 @@ HashMap *hashmap_create(void);
 // Updates the HashMap with the specified key-value pairs
 // if key value pair already exists only changes the value does not make a duplicate key
 // -> Keep old key, replace value
-bool hashmap_put(HashMap *doublyLinkedList, void *key, void *data);
+bool hashmap_put(HashMap *hashMap, void *key, void *data);
 
 
 
@@ -123,7 +136,7 @@ bool hashmap_put(HashMap *doublyLinkedList, void *key, void *data);
    ============================================================ */
 
 // Returns the value associated with the specified key
-const void *hashmap_get_value(const HashMap *hashMap, const void *key);
+const void *hashmap_lookup(const HashMap *hashMap, const void *key);
 
 // Returns a list containing the dictionary's keys
 const void *hashmap_keys(const HashMap *hashMap);
